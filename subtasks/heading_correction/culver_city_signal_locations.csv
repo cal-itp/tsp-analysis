@@ -1,0 +1,104 @@
+﻿TspAssetID,Name,Lat,Long,IPHostAddress
+1,Washington Blvd + Costco Dwy,33.991286,-118.44624,172.16.2.1
+2,Washington Blvd + Glencoe Ave / Costco Dwy,33.991959,-118.444765,172.16.2.2
+3,Washington Blvd + Redwood Ave,33.993192,-118.442316,172.16.2.3
+4,Washington Blvd + Beethoven St,33.995264,-118.438218,172.16.2.4
+5,Washington Blvd + Rosabell St,33.996338,-118.436028,172.16.2.5
+6,Washington Blvd + Washington Pl / Zanja St / Wade St,,,172.16.2.6
+7,Washington Pl + Centinela Ave,33.999457,-118.430359,172.16.2.7
+8,Washington Pl + Grand View Blvd,34.000595,-118.427901,172.16.2.8
+9,Washington Blvd + Centinela Ave,33.996971,-118.428479,172.16.2.9
+10,Washington Blvd + Grand View Blvd,33.997268,-118.42547,172.16.2.10
+11,Washington Blvd + Inglewood Blvd,33.997671,-118.422104,172.16.2.11
+12,Washington Blvd + Berryman Ave,34.001319,-118.416198,172.16.2.12
+13,I-405 SB On/Off-Ramp + Sawtelle Blvd (s/o Venice Blvd),34.009633,-118.41826,172.16.2.13
+14,Washington Pl + Sawtelle Blvd,34.007308,-118.416472,172.16.2.14
+15,Washington Blvd + Sawtelle Blvd,34.004251,-118.414663,172.16.2.15
+16,I-405 NB On/Off-Ramp + Sawtelle Blvd (n/o Venice Blvd),34.002922,-118.412608,172.16.2.16
+17,Culver Blvd + Sawtelle Blvd,34.002376,-118.411783,172.16.2.17
+18,I-405 NB On/Off-Ramp + Sepulveda Blvd,34.011119,-118.415795,172.16.2.18
+19,Washington Pl + Sepulveda Blvd,34.008793,-118.413972,172.16.2.19
+20,Washington Blvd + Washington Pl / Harter Ave / Tilden Ave,34.010194,-118.411592,172.16.2.20
+21,Washington Blvd + Sepulveda Blvd,34.007207,-118.413007,172.16.2.21
+22,Lucerne Ave + Sepulveda Blvd,34.000424,-118.402421,172.16.2.22
+23,Braddock Dr + Sepulveda Blvd,34.002925,-118.406842,172.16.2.23
+24,Lindblade St + Sepulveda Blvd,34.003821,-118.408367,172.16.2.24
+25,Culver Blvd + Sepulveda Blvd,34.004713,-118.40993,172.16.2.25
+27,Washington Blvd + Elenda St / Girard Ave,34.008327,-118.406897,172.16.2.27
+28,Culver Blvd + Elenda St,34.013857,-118.408852,172.16.2.28
+29,Washington Blvd + Culver Center Dr,34.01003,-118.405692,172.16.2.29
+30,Washington Blvd + Overland Ave,34.016116,-118.406384,172.16.2.30
+31,Sony Entrance + Overland Ave / Palm Ct,34.016865,-118.405478,172.16.2.31
+32,Franklin Ave + Farragut Dr / Overland Ave,34.015696,-118.404193,172.16.2.32
+33,Braddock Dr + Overland Ave,34.010422,-118.399225,172.16.2.33
+34,Culver Blvd + Overland Ave,34.011533,-118.400293,172.16.2.34
+35,Culver Blvd + Sony Entry / Motor Dr,34.013913,-118.402553,172.16.2.35
+36,Madison Ave + Sony Dwy,34.016533,-118.400301,172.16.2.36
+37,Culver Blvd + Madison Ave,34.020373,-118.398578,172.16.2.37
+38,Washington Blvd + Motor Ave,34.019687,-118.397867,172.16.2.38
+39,Washington Blvd + Jasmine Ave,34.018663,-118.402535,172.16.2.39
+40,Washington Blvd + Clarington Ave / Madison Ave,34.019904,-118.400477,172.16.2.40
+41,Washington Blvd + Duquesne Ave / Hughes Ave,34.020799,-118.398941,172.16.2.41
+42,Culver Blvd + Duquesne Ave,34.021677,-118.397488,172.16.2.42
+43,Lafayette Pl + Culver Blvd,34.021153,-118.396672,172.16.2.43
+44,Washington Bl/Culver Bl + Irving Pl/Watseka Av,34.022153,-118.395859,172.16.2.44
+45,Cardiff Ave + Culver Blvd,,,172.16.2.45
+46,Culver Blvd + Main St/Washington Bl,34.023423,-118.394834,172.16.2.46
+47,Culver Blvd + Canfield Ave / Washington Blvd,34.024387,-118.394129,172.16.2.47
+48,Washington Blvd + Ince Blvd,34.025232,-118.393418,172.16.2.48
+49,Washington Blvd + Robertson Bl/Higuera St,34.02464,-118.392503,172.16.2.49
+50,Higuera St + Eastham Dr,34.025979,-118.390258,172.16.2.50
+51,Hayden Av/Pl* + Higuera St,34.022155,-118.379373,172.16.2.51
+52,National Blvd + Hayden Ave,34.022492,-118.382154,172.16.2.52
+53,National Blvd + Wesley St,34.027022,-118.380759,172.16.2.53
+54,Washington Blvd + National Bl/Exposition Bl,34.027383,-118.384226,172.16.2.54
+55,Washington Blvd + Helms Ave,34.028189,-118.386566,172.16.2.55
+56,Washington Blvd + La Cienaga Ave / McManus Ave,34.029741,-118.383943,172.16.2.56
+57,Washington Blvd + La Cienaga Blvd,34.03109,-118.379046,172.16.2.57
+58,Washington Blvd + Adams Blvd / Comey Ave,34.032498,-118.374335,172.16.2.58
+59,Centinela Ave + Green Valley Cir,34.032987,-118.37316,172.16.2.59
+60,Green Valley Cir + Buckingham Pkwy,33.977157,-118.386576,172.16.2.60
+61,Centinela Ave + Bristol Pkway,33.982133,-118.386259,172.16.2.61
+62,Bristol Pkwy + Green Valley Cir,33.97998,-118.392429,172.16.2.62
+63,Slauson Ave  + Buckingham Pkwy,33.983559,-118.390939,172.16.2.63
+64,Hannum Ave + Buckingham Pkwy,33.988994,-118.380591,172.16.2.64
+65,Hannum Ave + Uplander Way,33.987518,-118.382427,172.16.2.65
+66,Slauson Ave + Bristol Pkway,33.987382,-118.384674,172.16.2.66
+67,Hannum Ave + Bristol Pkwy,33.988905,-118.386793,172.16.2.67
+68,Hannum Ave + Fox Hills Dr. / CHC Dwy,33.987243,-118.386789,172.16.2.68
+69,Centinela Ave + Radisson Hotel Dwy,33.986968,-118.389825,172.16.2.69
+70,Centinela Ave + Arizona Ave,33.982059,-118.396836,172.16.2.70
+71,Sepulveda Blvd + Centinela Ave,33.981407,-118.395759,172.16.2.71
+72,Sepulveda Blvd + Green Valley Cir,33.981013,-118.39479,172.16.2.72
+73,Sepulveda Blvd + Westfield Mall Dwy,33.9835,-118.394765,172.16.2.73
+74,Slauson Ave + Marina Fwy (SR-90),33.986619,-118.395658,172.16.2.74
+75,Hannum Ave + Playa Ct,33.987142,-118.395577,172.16.2.75
+76,Slauson Ave + Hannum Ave,33.989886,-118.393138,172.16.2.76
+77,Slauson Ave + Fox Hills Mall Dwy,33.988646,-118.391976,172.16.2.77
+78,Sepulveda Blvd + Slauson Ave,33.988544,-118.39394,172.16.2.78
+79,Slauson Ave + Jefferson Blvd/Playa Pacific Dwy,33.988625,-118.395411,172.16.2.79
+80,Hannum Ave + Playa St,33.988893,-118.397311,172.16.2.80
+81,Sepulveda Blvd + Jefferson Blvd / Playa St,33.99091,-118.394038,172.16.2.81
+82,Sepulveda Blvd + Berryman Ave,33.990229,-118.395224,172.16.2.82
+83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,33.992986,-118.395321,172.16.2.83
+84,Sepulveda Blvd + Machado Rd,33.995811,-118.395543,172.16.2.84
+85,Jefferson Blvd + Machado Rd,33.997671,-118.397871,172.16.2.85
+86,Jefferson Blvd + Cota St,33.997675,-118.3955,172.16.2.86
+87,Jefferson Blvd + Kinston Ave,34.00002,-118.395494,172.16.2.87
+88,Overland Ave + Virginia Ave,34.00202,-118.394532,172.16.2.88
+89,Jefferson Blvd + Overland Ave,34.006072,-118.395215,172.16.2.89
+90,"Overland Ave, Clarmon Pl + Freshman Dr",34.004212,-118.393489,172.16.2.90
+91,Overland Ave + Maytime Ln,34.001843,-118.391158,172.16.2.91
+92,Jefferson Blvd + Jordan Way / Summertime Ln,34.003052,-118.392411,172.16.2.92
+93,Jefferson Blvd + Indian Wood Rd,34.005338,-118.392962,172.16.2.93
+94,Jefferson Blvd + Raintree Cir,34.006784,-118.392181,172.16.2.94
+95,Jefferson Blvd + College Blvd / Leahy St,34.010117,-118.390505,172.16.2.95
+96,Jefferson Blvd + Storage Dwy / Pacbell,34.013098,-118.388988,172.16.2.96
+97,Jefferson Blvd + Duquesne Ave,,,172.16.2.97
+98,Hannum Ave + Westfield Mall Dwy,34.016764,-118.388012,172.16.2.98
+99,Washington Blvd + Landmark St,33.987563,-118.391021,172.16.2.99
+100,Culver Blvd + I-405 NB On Off Ramps,34.027204,-118.388146,172.16.2.100
+101,National Blvd + Eastham Dr,,,172.16.2.101
+102,Washington Blvd + McLaughlin Ave,34.026724,-118.377616,172.16.2.102
+105,Jefferson Blvd + Hetzler Rd (New),33.999976,-118.417724,172.16.2.105
+106,Washington Blvd + Wesley St,33.984411,-118.38402,172.16.2.106
