@@ -1,0 +1,370 @@
+﻿Route Direction,"Bus Route 
+Direction",Route,Line,Rt,Intersection,Name,SD,Fixed Heading,Mean  Heading,Combined Heading,Heading,Min,Max,Requested Direction,Corrected,Combined Direction,Comments
+East,East,Rt5,5,5,Intersection 33,Braddock Dr + Overland Ave,0.76,,32.60,32.60,35,350,80,,, ,
+North,North,Rt3,3,3,Intersection 33,Braddock Dr + Overland Ave,2.42,,323.51,323.51,325,280,10,,, ,
+South (54),South,Rt3,3,3,Intersection 33,Braddock Dr + Overland Ave,0.61,,141.44,141.44,140,95,185,,, ,
+South (57),South,Rt3,3,3,Intersection 33,Braddock Dr + Overland Ave,0.69,,141.32,141.32,140,95,185,,, ,
+West ,West ,Rt5,5,5,Intersection 33,Braddock Dr + Overland Ave,0.97,,214.58,214.58,215,170,260,,, ,
+East,East,Rt5,5,5,Intersection 23,Braddock Dr + Sepulveda Blvd,1.10,,31.73,31.73,30,345,75,,, ,
+North,North,Rt6,6,6,Intersection 23,Braddock Dr + Sepulveda Blvd,0.46,,304.41,304.41,305,260,350,,North ,North ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 23,Braddock Dr + Sepulveda Blvd,1.17,,303.97,303.97,305,260,350,,North ,North ,
+South ,South ,Rt6,6,6,Intersection 23,Braddock Dr + Sepulveda Blvd,0.93,,124.96,124.96,125,80,170,,South ,South ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 23,Braddock Dr + Sepulveda Blvd,1.14,,124.96,124.96,125,80,170,,South ,South ,
+East,East,Rt2,2,2,Intersection 62,Bristol Pkwy + Green Valley Cir,4.42,,105.88,105.88,105,60,150,,, ,
+North (15),North,Rt3,3,3,Intersection 62,Bristol Pkwy + Green Valley Cir,3.34,,103.78,103.78,105,60,150,,, ,
+South (54),South,Rt3,3,3,Intersection 62,Bristol Pkwy + Green Valley Cir,3.12,,245.70,245.70,245,200,290,,, ,
+South (57),South,Rt3,3,3,Intersection 62,Bristol Pkwy + Green Valley Cir,4.53,,245.80,245.80,245,200,290,,, ,
+East,East,Rt1,1,1,Intersection 45,Cardiff Ave + Culver Blvd,2.10,,33.78,33.78,35,350,80,,, ,
+East,East,Rt5,5,5,Intersection 45,Cardiff Ave + Culver Blvd,1.91,,36.31,36.31,35,350,80,,, ,
+East ,East ,Rt7,7,7,Intersection 45,Cardiff Ave + Culver Blvd,2.50,,35.75,35.75,35,350,80,,, ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 45,Cardiff Ave + Culver Blvd,1.35,,37.28,37.28,35,350,80,,, ,
+West ,West ,Rt1,1,1,Intersection 45,Cardiff Ave + Culver Blvd,0.89,,212.07,212.07,210,165,255,,, ,
+West ,West ,Rt5,5,5,Intersection 45,Cardiff Ave + Culver Blvd,0.74,,211.94,211.94,210,165,255,,, ,
+West ,West ,Rt7,7,7,Intersection 45,Cardiff Ave + Culver Blvd,0.51,,212.29,212.29,210,165,255,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 45,Cardiff Ave + Culver Blvd,0.70,,213.06,213.06,215,170,260,,, ,
+North (15),North,Rt3,3,3,Intersection 70,Centinela Ave + Arizona Ave,2.25,,129.82,129.82,130,85,175,,, ,
+South (54),South,Rt3,3,3,Intersection 70,Centinela Ave + Arizona Ave,0.80,,193.50,193.50,195,150,240,,, ,
+South (57),South,Rt3,3,3,Intersection 70,Centinela Ave + Arizona Ave,3.53,,193.68,193.68,195,150,240,,, ,
+North (27),North,Rt3,3,3,Intersection 61,Centinela Ave + Bristol Pkway,12.47,,203.00,203.00,205,160,250,,, ,
+West ,West ,Rt2,2,2,Intersection 61,Centinela Ave + Bristol Pkway,1.35,,199.99,199.99,200,155,245,,, ,
+North (15),North,Rt3,3,3,Intersection 69,Centinela Ave + Radisson Hotel Dwy,2.22,,125.57,125.57,125,80,170,,, ,
+South (54),South,Rt3,3,3,Intersection 69,Centinela Ave + Radisson Hotel Dwy,13.45,,143.86,143.86,145,100,190,,, ,
+South (57),South,Rt3,3,3,Intersection 69,Centinela Ave + Radisson Hotel Dwy,16.06,,285.72,285.72,285,240,330,,, ,
+East,East,Rt1,1,1,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,2.00,,34.35,34.35,35,350,80,,East ,East ,EB right turn
+East,East,Rt5,5,5,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,2.50,,33.17,33.17,35,350,80,,East ,East ,EB right turn
+East ,East ,Rt7,7,7,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,1.31,,34.04,34.04,35,350,80,,East ,East ,EB right turn
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,0.36,,32.73,32.73,35,350,80,,East ,East ,EB right turn
+West ,West ,Rt1,1,1,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,22.50,,241.55,241.55,240,195,285,,North ,North ,NB left turn
+West ,West ,Rt5,5,5,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,2.26,,233.62,233.62,235,190,280,,North ,North ,NB left turn
+West ,West ,Rt7,7,7,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,1.88,,232.64,232.64,235,190,280,,North ,North ,NB left turn
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 47,Culver Blvd + Canfield Ave / Washington Blvd,1.09,,232.95,232.95,235,190,280,,North ,North ,NB left turn
+East,East,Rt1,1,1,Intersection 42,Culver Blvd + Duquesne Ave,5.17,,55.30,55.30,55,10,100,,South ,South ,
+East,East,Rt5,5,5,Intersection 42,Culver Blvd + Duquesne Ave,11.83,,24.79,24.79,25,340,70,,East ,East ,
+East ,East ,Rt7,7,7,Intersection 42,Culver Blvd + Duquesne Ave,1.69,,34.36,34.36,35,350,80,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 42,Culver Blvd + Duquesne Ave,0.48,,34.17,34.17,35,350,80,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 42,Culver Blvd + Duquesne Ave,0.81,,214.54,214.54,215,170,260,,West ,West ,WB left turn
+West ,West ,Rt5,5,5,Intersection 42,Culver Blvd + Duquesne Ave,0.93,,213.42,213.42,215,170,260,,West ,West ,WB left turn
+West ,West ,Rt7,7,7,Intersection 42,Culver Blvd + Duquesne Ave,1.10,,214.10,214.10,215,170,260,,West ,West ,WB left turn
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 42,Culver Blvd + Duquesne Ave,0.58,,213.75,213.75,215,170,260,,West ,West ,WB left turn
+East ,East ,Rt7,7,7,Intersection 28,Culver Blvd + Elenda St,0.89,,34.13,34.13,35,350,80,,East ,East ,
+West ,West ,Rt7,7,7,Intersection 28,Culver Blvd + Elenda St,1.05,,213.37,213.37,215,170,260,,West ,West ,
+East,East,Rt5,5,5,Intersection 37,Culver Blvd + Madison Ave,3.50,,302.43,302.43,300,255,345,,North ,North ,NB left turn
+East ,East ,Rt7,7,7,Intersection 37,Culver Blvd + Madison Ave,3.88,,31.36,31.36,30,345,75,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 37,Culver Blvd + Madison Ave,1.55,,31.49,31.49,30,345,75,,East ,East ,
+West ,West ,Rt5,5,5,Intersection 37,Culver Blvd + Madison Ave,3.08,,215.24,215.24,215,170,260,,West ,West ,WB left turn
+West ,West ,Rt7,7,7,Intersection 37,Culver Blvd + Madison Ave,1.53,,213.73,213.73,215,170,260,,West ,West ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 37,Culver Blvd + Madison Ave,1.44,,214.71,214.71,215,170,260,,West ,West ,
+East,East,Rt1,1,1,Intersection 46,Culver Blvd + Main St/Washington Bl,1.43,,33.00,33.00,35,350,80,,East ,East ,
+East,East,Rt5,5,5,Intersection 46,Culver Blvd + Main St/Washington Bl,1.55,,34.40,34.40,35,350,80,,East ,East ,
+East ,East ,Rt7,7,7,Intersection 46,Culver Blvd + Main St/Washington Bl,1.18,,33.59,33.59,35,350,80,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 46,Culver Blvd + Main St/Washington Bl,0.54,,34.24,34.24,35,350,80,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 46,Culver Blvd + Main St/Washington Bl,14.77,,305.47,305.47,305,260,350,,West ,West ,
+West ,West ,Rt5,5,5,Intersection 46,Culver Blvd + Main St/Washington Bl,1.37,,310.30,310.30,310,265,355,,West ,West ,
+West ,West ,Rt7,7,7,Intersection 46,Culver Blvd + Main St/Washington Bl,2.94,,309.73,309.73,310,265,355,,West ,West ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 46,Culver Blvd + Main St/Washington Bl,0.92,,309.56,309.56,310,265,355,,West ,West ,
+East ,East ,Rt7,7,7,Intersection 34,Culver Blvd + Overland Ave,3.74,,35.57,35.57,35,350,80,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 34,Culver Blvd + Overland Ave,36.59,,111.12,111.12,110,65,155,,, ,Likely unreliable trigger point due to pulling out of Vets Park layover
+North (15),North,Rt3,3,3,Intersection 34,Culver Blvd + Overland Ave,1.47,,321.68,321.68,320,275,5,,, ,
+South (54),South,Rt3,3,3,Intersection 34,Culver Blvd + Overland Ave,0.42,,143.08,143.08,145,100,190,,, ,
+South (57),South,Rt3,3,3,Intersection 34,Culver Blvd + Overland Ave,3.86,,141.02,141.02,140,95,185,,, ,
+West ,West ,Rt7,7,7,Intersection 34,Culver Blvd + Overland Ave,1.13,,213.92,213.92,215,170,260,,West ,West ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 34,Culver Blvd + Overland Ave,0.45,,214.03,214.03,215,170,260,,West ,West ,
+East ,East ,Rt7,7,7,Intersection 17,Culver Blvd + Sawtelle Blvd,1.03,,33.98,33.98,35,350,80,,East ,East ,
+West ,West ,Rt7,7,7,Intersection 17,Culver Blvd + Sawtelle Blvd,0.67,,214.27,214.27,215,170,260,,West ,West ,
+East ,East ,Rt7,7,7,Intersection 25,Culver Blvd + Sepulveda Blvd,1.06,,33.79,33.79,35,350,80,,East ,East ,
+North,North,Rt6,6,6,Intersection 25,Culver Blvd + Sepulveda Blvd,0.72,,305.08,305.08,305,260,350,,North ,North ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 25,Culver Blvd + Sepulveda Blvd,1.27,,305.88,305.88,305,260,350,,North ,North ,
+South ,South ,Rt6,6,6,Intersection 25,Culver Blvd + Sepulveda Blvd,0.90,,124.85,124.85,125,80,170,,South ,South ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 25,Culver Blvd + Sepulveda Blvd,1.26,,124.54,124.54,125,80,170,,South ,South ,
+West ,West ,Rt7,7,7,Intersection 25,Culver Blvd + Sepulveda Blvd,0.77,,216.41,216.41,215,170,260,,West ,West ,
+East ,East ,Rt7,7,7,Intersection 35,Culver Blvd + Sony Entry / Motor Dr,2.23,,34.12,34.12,35,350,80,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 35,Culver Blvd + Sony Entry / Motor Dr,0.35,,33.50,33.50,35,350,80,,East ,East ,
+West ,West ,Rt7,7,7,Intersection 35,Culver Blvd + Sony Entry / Motor Dr,1.17,,213.71,213.71,215,170,260,,West ,West ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 35,Culver Blvd + Sony Entry / Motor Dr,0.49,,213.89,213.89,215,170,260,,West ,West ,
+North (15),North,Rt3,3,3,Intersection 32,Franklin Ave + Farragut Dr / Overland Ave,0.56,,321.14,321.14,320,275,5,,, ,
+South (54),South,Rt3,3,3,Intersection 32,Franklin Ave + Farragut Dr / Overland Ave,2.58,,143.86,143.86,145,100,190,,, ,
+South (57),South,Rt3,3,3,Intersection 32,Franklin Ave + Farragut Dr / Overland Ave,0.53,,141.25,141.25,140,95,185,,, ,
+North (15),North,Rt3,3,3,Intersection 67,Hannum Ave + Bristol Pkwy,3.09,,27.86,27.86,30,345,75,,, ,
+South (54),South,Rt3,3,3,Intersection 67,Hannum Ave + Bristol Pkwy,0.18,,264.33,264.33,265,220,310,,, ,
+South (57),South,Rt3,3,3,Intersection 67,Hannum Ave + Bristol Pkwy,1.06,,261.38,261.38,260,215,305,,, ,
+North (15),North,Rt3,3,3,Intersection 64,Hannum Ave + Buckingham Pkwy,3.40,,81.14,81.14,80,35,125,,, ,
+South (54),South,Rt3,3,3,Intersection 64,Hannum Ave + Buckingham Pkwy,3.43,,233.08,233.08,235,190,280,,, ,
+South (57),South,Rt3,3,3,Intersection 64,Hannum Ave + Buckingham Pkwy,6.10,,236.65,236.65,235,190,280,,, ,
+North (27),North,Rt3,3,3,Intersection 75,Hannum Ave + Playa Ct,2.17,,319.34,319.34,320,275,5,,, ,
+South (67),South,Rt3,3,3,Intersection 75,Hannum Ave + Playa Ct,28.46,,219.08,219.08,220,175,265,,West ,West ,"*high SD, other route variant labels this correctly"
+North (27),North,Rt3,3,3,Intersection 80,Hannum Ave + Playa St,1.68,,322.38,322.38,320,275,5,,, ,
+South (67),South,Rt3,3,3,Intersection 80,Hannum Ave + Playa St,1.92,,232.28,232.28,230,185,275,,, ,
+North (15),North,Rt3,3,3,Intersection 65,Hannum Ave + Uplander Way,16.67,,77.64,77.64,80,35,125,,, ,
+South (54),South,Rt3,3,3,Intersection 65,Hannum Ave + Uplander Way,0.70,,266.30,266.30,265,220,310,,, ,
+South (57),South,Rt3,3,3,Intersection 65,Hannum Ave + Uplander Way,1.40,,268.87,268.87,270,225,315,,, ,
+West ,West ,Rt5,5,5,Intersection 51,Hayden Av/Pl* + Higuera St,1.30,,194.48,194.48,195,150,240,,, ,
+North,North,Rt6,6,6,Intersection 18,I-405 NB On/Off-Ramp + Sepulveda Blvd,0.71,,326.33,326.33,325,280,10,,, ,
+South ,South ,Rt6,6,6,Intersection 18,I-405 NB On/Off-Ramp + Sepulveda Blvd,2.12,,147.43,147.43,145,100,190,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 18,I-405 NB On/Off-Ramp + Sepulveda Blvd,1.15,,147.48,147.48,145,100,190,,, ,
+East ,East ,Rt4,4,4,Intersection 95,Jefferson Blvd + College Blvd / Leahy St,1.00,,22.91,22.91,25,340,70,,, ,
+West,West,Rt4,4,4,Intersection 95,Jefferson Blvd + College Blvd / Leahy St,2.68,,191.28,191.28,190,145,235,,, ,
+East ,East ,Rt4,4,4,Intersection 86,Jefferson Blvd + Cota St,0.91,,358.12,358.12,360,315,45,,, ,
+North (15),North,Rt3,3,3,Intersection 86,Jefferson Blvd + Cota St,0.57,,358.15,358.15,360,315,45,,, ,
+South (54),South,Rt3,3,3,Intersection 86,Jefferson Blvd + Cota St,0.68,,202.76,202.76,205,160,250,,, ,
+South (57),South,Rt3,3,3,Intersection 86,Jefferson Blvd + Cota St,0.30,,202.48,202.48,200,155,245,,, ,
+West,West,Rt4,4,4,Intersection 86,Jefferson Blvd + Cota St,0.79,,202.36,202.36,200,155,245,,, ,
+East ,East ,Rt4,4,4,Intersection 97,Jefferson Blvd + Duquesne Ave,3.20,,5.82,5.82,5,320,50,,, ,
+West,West,Rt4,4,4,Intersection 97,Jefferson Blvd + Duquesne Ave,2.55,,213.02,213.02,215,170,260,,, ,
+East ,East ,Rt4,4,4,Intersection 105,Jefferson Blvd + Hetzler Rd (New),0.98,,70.90,70.90,70,25,115,,, ,*Signal orientation transitions to E/W along Jfferson here. This is fine.
+West,West,Rt4,4,4,Intersection 105,Jefferson Blvd + Hetzler Rd (New),2.05,,259.00,259.00,260,215,305,,, ,
+East ,East ,Rt4,4,4,Intersection 93,Jefferson Blvd + Indian Wood Rd,0.60,,22.72,22.72,25,340,70,,, ,
+West,West,Rt4,4,4,Intersection 93,Jefferson Blvd + Indian Wood Rd,1.30,,202.76,202.76,205,160,250,,, ,
+East ,East ,Rt4,4,4,Intersection 92,Jefferson Blvd + Jordan Way / Summertime Ln,92.44,328.69,292.69,328.69,330,285,15,,North ,North ,"*High SD, probably a measuring error"
+West,West,Rt4,4,4,Intersection 92,Jefferson Blvd + Jordan Way / Summertime Ln,3.44,,203.54,203.54,205,160,250,,, ,
+East ,East ,Rt4,4,4,Intersection 87,Jefferson Blvd + Kinston Ave,0.98,,22.61,22.61,25,340,70,,, ,
+North (15),North,Rt3,3,3,Intersection 87,Jefferson Blvd + Kinston Ave,1.37,,22.21,22.21,20,335,65,,, ,
+South (54),South,Rt3,3,3,Intersection 87,Jefferson Blvd + Kinston Ave,0.68,,202.46,202.46,200,155,245,,, ,
+South (57),South,Rt3,3,3,Intersection 87,Jefferson Blvd + Kinston Ave,0.62,,202.18,202.18,200,155,245,,, ,
+West,West,Rt4,4,4,Intersection 87,Jefferson Blvd + Kinston Ave,0.52,,201.95,201.95,200,155,245,,, ,
+East ,East ,Rt4,4,4,Intersection 85,Jefferson Blvd + Machado Rd,1.00,,357.46,357.46,355,310,40,,, ,
+North (15),North,Rt3,3,3,Intersection 85,Jefferson Blvd + Machado Rd,1.40,,357.06,357.06,355,310,40,,, ,
+South (54),South,Rt3,3,3,Intersection 85,Jefferson Blvd + Machado Rd,2.66,,179.04,179.04,180,135,225,,, ,
+South (57),South,Rt3,3,3,Intersection 85,Jefferson Blvd + Machado Rd,2.07,,178.97,178.97,180,135,225,,, ,
+West,West,Rt4,4,4,Intersection 85,Jefferson Blvd + Machado Rd,0.62,,177.36,177.36,175,130,220,,, ,
+East ,East ,Rt4,4,4,Intersection 89,Jefferson Blvd + Overland Ave,0.85,,322.19,322.19,320,275,5,,North ,North ,NB right turn
+North (15),North,Rt3,3,3,Intersection 89,Jefferson Blvd + Overland Ave,0.65,,22.97,22.97,25,340,70,,, ,"*Line 3 NB can be either North or East here, depending on route pattern"
+South (54),South,Rt3,3,3,Intersection 89,Jefferson Blvd + Overland Ave,0.20,,142.40,142.40,140,95,185,,, ,
+South (57),South,Rt3,3,3,Intersection 89,Jefferson Blvd + Overland Ave,0.48,,141.88,141.88,140,95,185,,, ,
+West,West,Rt4,4,4,Intersection 89,Jefferson Blvd + Overland Ave,0.88,,202.19,202.19,200,155,245,,West ,West ,
+East ,East ,Rt4,4,4,Intersection 94,Jefferson Blvd + Raintree Cir,1.32,,22.68,22.68,25,340,70,,, ,
+West,West,Rt4,4,4,Intersection 94,Jefferson Blvd + Raintree Cir,1.01,,202.65,202.65,205,160,250,,, ,
+East,East,Rt1,1,1,Intersection 43,Lafayette Pl + Culver Blvd,26.80,120.54,111.65,120.54,120,75,165,,East ,East ,"*High SD, likely a measurement error"
+East,East,Rt5,5,5,Intersection 43,Lafayette Pl + Culver Blvd,1.21,,33.07,33.07,35,350,80,,East ,East ,
+East ,East ,Rt7,7,7,Intersection 43,Lafayette Pl + Culver Blvd,2.98,,33.91,33.91,35,350,80,,East ,East ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 43,Lafayette Pl + Culver Blvd,0.37,,33.50,33.50,35,350,80,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 43,Lafayette Pl + Culver Blvd,0.94,,213.84,213.84,215,170,260,,West ,West ,
+West ,West ,Rt5,5,5,Intersection 43,Lafayette Pl + Culver Blvd,1.22,,212.99,212.99,215,170,260,,West ,West ,
+West ,West ,Rt7,7,7,Intersection 43,Lafayette Pl + Culver Blvd,0.72,,213.52,213.52,215,170,260,,West ,West ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 43,Lafayette Pl + Culver Blvd,0.48,,213.23,213.23,215,170,260,,West ,West ,
+North,North,Rt6,6,6,Intersection 24,Lindblade St + Sepulveda Blvd,1.88,,302.80,302.80,305,260,350,,North ,North ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 24,Lindblade St + Sepulveda Blvd,1.34,,303.91,303.91,305,260,350,,North ,North ,
+South ,South ,Rt6,6,6,Intersection 24,Lindblade St + Sepulveda Blvd,0.57,,124.36,124.36,125,80,170,,South ,South ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 24,Lindblade St + Sepulveda Blvd,0.59,,126.70,126.70,125,80,170,,South ,South ,
+North,North,Rt6,6,6,Intersection 22,Lucerne Ave + Sepulveda Blvd,1.64,,304.58,304.58,305,260,350,,North ,North ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 22,Lucerne Ave + Sepulveda Blvd,0.68,,303.84,303.84,305,260,350,,North ,North ,
+South ,South ,Rt6,6,6,Intersection 22,Lucerne Ave + Sepulveda Blvd,0.37,,123.89,123.89,125,80,170,,South ,South ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 22,Lucerne Ave + Sepulveda Blvd,1.07,,123.29,123.29,125,80,170,,South ,South ,
+East,East,Rt5,5,5,Intersection 101,National Blvd + Eastham Dr,1.59,,96.06,96.06,95,50,140,,, ,
+West ,West ,Rt5,5,5,Intersection 101,National Blvd + Eastham Dr,1.60,,7.13,7.13,5,320,50,,West,West,*Likely due to realignment for bridge construction.
+East,East,Rt5,5,5,Intersection 52,National Blvd + Hayden Ave,1.45,,96.73,96.73,95,50,140,,, ,
+West ,West ,Rt5,5,5,Intersection 52,National Blvd + Hayden Ave,0.93,,275.54,275.54,275,230,320,,, ,
+East,East,Rt5,5,5,Intersection 53,National Blvd + Wesley St,9.10,,112.71,112.71,115,70,160,,, ,
+East ,East ,Rt4,4,4,Intersection 91,Overland Ave + Maytime Ln,34.17,,43.80,43.80,45,0,90,,, ,
+North (27),North,Rt3,3,3,Intersection 91,Overland Ave + Maytime Ln,5.29,,321.57,321.57,320,275,5,,, ,
+South (67),South,Rt3,3,3,Intersection 91,Overland Ave + Maytime Ln,3.05,,144.42,144.42,145,100,190,,, ,
+West,West,Rt4,4,4,Intersection 91,Overland Ave + Maytime Ln,22.10,,166.26,166.26,165,120,210,,, ,
+North (15),North,Rt3,3,3,Intersection 88,Overland Ave + Virginia Ave,1.82,,317.94,317.94,320,275,5,,, ,
+South (54),South,Rt3,3,3,Intersection 88,Overland Ave + Virginia Ave,0.22,,145.44,145.44,145,100,190,,, ,
+South (57),South,Rt3,3,3,Intersection 88,Overland Ave + Virginia Ave,0.83,,145.62,145.62,145,100,190,,, ,
+East ,East ,Rt4,4,4,Intersection 90,"Overland Ave, Clarmon Pl + Freshman Dr",0.54,,200.46,200.46,200,155,245,,, ,SB left turn
+North (27),North,Rt3,3,3,Intersection 90,"Overland Ave, Clarmon Pl + Freshman Dr",10.87,,347.06,347.06,345,300,30,,, ,
+South (67),South,Rt3,3,3,Intersection 90,"Overland Ave, Clarmon Pl + Freshman Dr",2.08,,140.78,140.78,140,95,185,,, ,
+West,West,Rt4,4,4,Intersection 90,"Overland Ave, Clarmon Pl + Freshman Dr",1.09,,200.26,200.26,200,155,245,,West ,West ,WB left turn
+East ,East ,Rt4,4,4,Intersection 82,Sepulveda Blvd + Berryman Ave,1.16,,357.91,357.91,360,315,45,,, ,
+North,North,Rt6,6,6,Intersection 82,Sepulveda Blvd + Berryman Ave,0.25,,358.50,358.50,360,315,45,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 82,Sepulveda Blvd + Berryman Ave,0.39,,358.32,358.32,360,315,45,,, ,
+North (15),North,Rt3,3,3,Intersection 82,Sepulveda Blvd + Berryman Ave,0.98,,357.99,357.99,360,315,45,,, ,
+South ,South ,Rt6,6,6,Intersection 82,Sepulveda Blvd + Berryman Ave,1.27,,177.98,177.98,180,135,225,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 82,Sepulveda Blvd + Berryman Ave,1.96,,177.38,177.38,175,130,220,,, ,
+South (54),South,Rt3,3,3,Intersection 82,Sepulveda Blvd + Berryman Ave,0.95,,177.02,177.02,175,130,220,,, ,
+South (57),South,Rt3,3,3,Intersection 82,Sepulveda Blvd + Berryman Ave,3.79,,178.22,178.22,180,135,225,,, ,
+West,West,Rt4,4,4,Intersection 82,Sepulveda Blvd + Berryman Ave,1.53,,176.82,176.82,175,130,220,,, ,
+North,North,Rt6,6,6,Intersection 71,Sepulveda Blvd + Centinela Ave,1.10,,347.84,347.84,350,305,35,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 71,Sepulveda Blvd + Centinela Ave,1.85,,346.37,346.37,345,300,30,,, ,
+North (15),North,Rt3,3,3,Intersection 71,Sepulveda Blvd + Centinela Ave,1.34,,121.99,121.99,120,75,165,,, ,EB left turn
+South ,South ,Rt6,6,6,Intersection 71,Sepulveda Blvd + Centinela Ave,16.77,,189.23,189.23,190,145,235,,, ,
+South (54),South,Rt3,3,3,Intersection 71,Sepulveda Blvd + Centinela Ave,5.36,,182.75,182.75,185,140,230,,, ,
+South (57),South,Rt3,3,3,Intersection 71,Sepulveda Blvd + Centinela Ave,7.53,,180.34,180.34,180,135,225,,, ,
+West ,West ,Rt2,2,2,Intersection 71,Sepulveda Blvd + Centinela Ave,1.35,,301.10,301.10,300,255,345,,, ,
+East,East,Rt2,2,2,Intersection 72,Sepulveda Blvd + Green Valley Cir,7.76,,147.58,147.58,150,105,195,,, ,SB left turn
+North,North,Rt6,6,6,Intersection 72,Sepulveda Blvd + Green Valley Cir,3.76,,11.25,11.25,10,325,55,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 72,Sepulveda Blvd + Green Valley Cir,3.21,,13.21,13.21,15,330,60,,, ,
+North (15),North,Rt3,3,3,Intersection 72,Sepulveda Blvd + Green Valley Cir,1.49,,10.01,10.01,10,325,55,,, ,NB right turn
+South ,South ,Rt6,6,6,Intersection 72,Sepulveda Blvd + Green Valley Cir,6.96,,150.46,150.46,150,105,195,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 72,Sepulveda Blvd + Green Valley Cir,4.99,,157.35,157.35,155,110,200,,, ,
+South (54),South,Rt3,3,3,Intersection 72,Sepulveda Blvd + Green Valley Cir,7.99,,259.28,259.28,260,215,305,,, ,WB left turn
+South (57),South,Rt3,3,3,Intersection 72,Sepulveda Blvd + Green Valley Cir,3.41,,254.50,254.50,255,210,300,,, ,WB left turn
+West ,West ,Rt2,2,2,Intersection 72,Sepulveda Blvd + Green Valley Cir,1.35,,11.04,11.04,10,325,55,,, ,
+East ,East ,Rt4,4,4,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,175.29,0.00,215.43,215.43,215,170,260,,, ,*This is a modulo error. Actual conditions should be correct
+North,North,Rt6,6,6,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,0.88,,358.64,358.64,360,315,45,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,147.87,0.00,277.87,277.87,280,235,325,,, ,*This is a modulo error. Actual conditions should be correct
+North (15),North,Rt3,3,3,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,142.48,0.00,287.70,287.70,290,245,335,,, ,*This is a modulo error. Actual conditions should be correct
+South ,South ,Rt6,6,6,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,5.79,,132.33,132.33,130,85,175,,, ,*Too complicated. Ask Andrew.
+South ,South ,Rt6R,Rt 6R,6R,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,0.98,,131.26,131.26,130,85,175,,, ,*Too complicated. Ask Andrew.
+South (54),South,Rt3,3,3,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,0.93,,178.92,178.92,180,135,225,,, ,
+South (57),South,Rt3,3,3,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,0.55,,178.52,178.52,180,135,225,,, ,
+West,West,Rt4,4,4,Intersection 83,Sepulveda Blvd + Jefferson / Sawtelle Blvd,1.26,,179.17,179.17,180,135,225,,, ,
+East ,East ,Rt4,4,4,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,1.03,,8.98,8.98,10,325,55,,, ,
+North,North,Rt6,6,6,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,1.77,,8.49,8.49,10,325,55,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,0.88,,5.90,5.90,5,320,50,,, ,
+North (15),North,Rt3,3,3,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,1.50,,9.34,9.34,10,325,55,,, ,
+South ,South ,Rt6,6,6,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,2.40,,176.73,176.73,175,130,220,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,1.56,,177.71,177.71,180,135,225,,, ,
+South (54),South,Rt3,3,3,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,0.42,,178.58,178.58,180,135,225,,, ,
+South (57),South,Rt3,3,3,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,0.32,,177.93,177.93,180,135,225,,, ,
+West,West,Rt4,4,4,Intersection 81,Sepulveda Blvd + Jefferson Blvd / Playa St,1.18,,177.60,177.60,180,135,225,,, ,
+North,North,Rt6,6,6,Intersection 84,Sepulveda Blvd + Machado Rd,0.88,,309.64,309.64,310,265,355,,North ,North ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 84,Sepulveda Blvd + Machado Rd,1.89,,309.20,309.20,310,265,355,,North ,North ,
+South ,South ,Rt6,6,6,Intersection 84,Sepulveda Blvd + Machado Rd,0.60,,129.76,129.76,130,85,175,,South ,South ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 84,Sepulveda Blvd + Machado Rd,1.07,,130.20,130.20,130,85,175,,South ,South ,
+East,East,Rt2,2,2,Intersection 78,Sepulveda Blvd + Slauson Ave,2.25,,100.41,100.41,100,55,145,,, ,EB right turn
+East ,East ,Rt4,4,4,Intersection 78,Sepulveda Blvd + Slauson Ave,0.79,,99.41,99.41,100,55,145,,, ,
+North,North,Rt6,6,6,Intersection 78,Sepulveda Blvd + Slauson Ave,135.11,,84.24,84.24,85,40,130,,North ,North ,*Inaccuracy due to turn out of Transit Center
+North ,North ,Rt6R,Rt 6R,6R,Intersection 78,Sepulveda Blvd + Slauson Ave,0.71,,6.69,6.69,5,320,50,,, ,
+North (15),North,Rt3,3,3,Intersection 78,Sepulveda Blvd + Slauson Ave,47.20,,125.10,125.10,125,80,170,,North ,North ,*Inaccuracy due to turn out of Transit Center. NB right turn
+South ,South ,Rt6,6,6,Intersection 78,Sepulveda Blvd + Slauson Ave,0.71,,185.46,185.46,185,140,230,,, ,SB left turn
+South ,South ,Rt6R,Rt 6R,6R,Intersection 78,Sepulveda Blvd + Slauson Ave,1.34,,185.36,185.36,185,140,230,,, ,
+South (54),South,Rt3,3,3,Intersection 78,Sepulveda Blvd + Slauson Ave,2.82,,182.02,182.02,180,135,225,,, ,SB left turn
+South (57),South,Rt3,3,3,Intersection 78,Sepulveda Blvd + Slauson Ave,1.03,,185.67,185.67,185,140,230,,, ,SB left turn
+West,West,Rt4,4,4,Intersection 78,Sepulveda Blvd + Slauson Ave,2.16,,186.24,186.24,185,140,230,,, ,SB left turn
+West ,West ,Rt2,2,2,Intersection 78,Sepulveda Blvd + Slauson Ave,3.48,,6.16,6.16,5,320,50,,, ,NB left turn
+East,East,Rt2,2,2,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,1.59,,187.96,187.96,190,145,235,,, ,
+North,North,Rt6,6,6,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,1.58,,3.20,3.20,5,320,50,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,168.24,1.41,121.41,1.41,0,315,45,,North ,North ,*This is a modulo error. Actual conditions should be correct
+South ,South ,Rt6,6,6,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,1.48,,184.51,184.51,185,140,230,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,0.87,,186.71,186.71,185,140,230,,, ,
+West ,West ,Rt2,2,2,Intersection 73,Sepulveda Blvd + Westfield Mall Dwy,142.25,2.33,74.33,2.33,0,315,45,,North ,North ,*This is a modulo error. Actual conditions should be correct
+North (15),North,Rt3,3,3,Intersection 63,Slauson Ave  + Buckingham Pkwy,7.11,,49.91,49.91,50,5,95,,North ,North ,NB left turn
+South (54),South,Rt3,3,3,Intersection 63,Slauson Ave  + Buckingham Pkwy,37.38,,107.74,107.74,110,65,155,,, ,EB right turn
+South (57),South,Rt3,3,3,Intersection 63,Slauson Ave  + Buckingham Pkwy,1.31,,89.92,89.92,90,45,135,,, ,EB right turn
+North (15),North,Rt3,3,3,Intersection 66,Slauson Ave + Bristol Pkway,63.46,,248.18,248.18,250,205,295,,, ,
+South (54),South,Rt3,3,3,Intersection 66,Slauson Ave + Bristol Pkway,1.23,,83.50,83.50,85,40,130,,, ,
+South (57),South,Rt3,3,3,Intersection 66,Slauson Ave + Bristol Pkway,1.76,,86.77,86.77,85,40,130,,, ,
+East ,East ,Rt4,4,4,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,3.44,,95.52,95.52,95,50,140,,, ,EB right turn
+North (15),North,Rt3,3,3,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,1.89,,262.70,262.70,265,220,310,,, ,WB left turn
+South ,South ,Rt6,6,6,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,2.08,,92.60,92.60,95,50,140,,, ,EB right turn
+South (54),South,Rt3,3,3,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,0.21,,91.70,91.70,90,45,135,,, ,EB right turn
+South (57),South,Rt3,3,3,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,5.56,,98.52,98.52,100,55,145,,, ,
+West,West,Rt4,4,4,Intersection 77,Slauson Ave + Fox Hills Mall Dwy,4.30,,94.17,94.17,95,50,140,,North ,North ,*Inaccuracy due to turn out of Transit Center. NB left turn
+North (15),North,Rt3,3,3,Intersection 76,Slauson Ave + Hannum Ave,1.22,,263.35,263.35,265,220,310,,, ,
+South (54),South,Rt3,3,3,Intersection 76,Slauson Ave + Hannum Ave,7.45,,86.26,86.26,85,40,130,,South ,South ,SB right turn
+South (57),South,Rt3,3,3,Intersection 76,Slauson Ave + Hannum Ave,4.28,,88.94,88.94,90,45,135,,South ,South ,SB right turn
+East,East,Rt2,2,2,Intersection 79,Slauson Ave + Jefferson Blvd/Playa Pacific Dwy,2.14,,51.75,51.75,50,5,95,,, ,EB right turn
+East ,East ,Rt4,4,4,Intersection 79,Slauson Ave + Jefferson Blvd/Playa Pacific Dwy,2.11,,53.45,53.45,55,10,100,,, ,EB right turn
+West,West,Rt4,4,4,Intersection 79,Slauson Ave + Jefferson Blvd/Playa Pacific Dwy,4.33,,275.11,275.11,275,230,320,,North ,North ,NB left turn
+West ,West ,Rt2,2,2,Intersection 79,Slauson Ave + Jefferson Blvd/Playa Pacific Dwy,3.48,,277.88,277.88,280,235,325,,North ,North ,NB left turn
+North (15),North,Rt3,3,3,Intersection 74,Slauson Ave + Marina Fwy (SR-90),1.70,,269.73,269.73,270,225,315,,, ,
+South (54),South,Rt3,3,3,Intersection 74,Slauson Ave + Marina Fwy (SR-90),1.02,,84.28,84.28,85,40,130,,, ,
+South (57),South,Rt3,3,3,Intersection 74,Slauson Ave + Marina Fwy (SR-90),0.43,,84.07,84.07,85,40,130,,, ,
+North (15),North,Rt3,3,3,Intersection 31,Sony Entrance + Overland Ave / Palm Ct,1.49,,321.05,321.05,320,275,5,,, ,
+South (54),South,Rt3,3,3,Intersection 31,Sony Entrance + Overland Ave / Palm Ct,5.69,,150.82,150.82,150,105,195,,, ,
+South (57),South,Rt3,3,3,Intersection 31,Sony Entrance + Overland Ave / Palm Ct,34.12,,160.32,160.32,160,115,205,,, ,
+East,East,Rt1,1,1,Intersection 58,Washington Blvd + Adams Blvd / Comey Ave,2.16,,62.98,62.98,65,20,110,,, ,
+West ,West ,Rt1,1,1,Intersection 58,Washington Blvd + Adams Blvd / Comey Ave,1.72,,243.66,243.66,245,200,290,,, ,
+East,East,Rt1,1,1,Intersection 4,Washington Blvd + Beethoven St,1.01,,58.49,58.49,60,15,105,,, ,
+West ,West ,Rt1,1,1,Intersection 4,Washington Blvd + Beethoven St,1.48,,239.93,239.93,240,195,285,,, ,
+West ,West ,Rt2,2,2,Intersection 4,Washington Blvd + Beethoven St,1.35,,238.69,238.69,240,195,285,,, ,
+East,East,Rt1,1,1,Intersection 12,Washington Blvd + Berryman Ave,7.80,,48.75,48.75,50,5,95,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 12,Washington Blvd + Berryman Ave,0.64,,204.03,204.03,205,160,250,,West ,West ,
+East,East,Rt1,1,1,Intersection 9,Washington Blvd + Centinela Ave,1.10,,84.94,84.94,85,40,130,,, ,
+East,East,Rt2,2,2,Intersection 9,Washington Blvd + Centinela Ave,1.78,,147.26,147.26,145,100,190,,, ,SB left turn
+East,East,Rt5,5,5,Intersection 9,Washington Blvd + Centinela Ave,1.99,,147.10,147.10,145,100,190,,, ,SB left turn
+West ,West ,Rt1,1,1,Intersection 9,Washington Blvd + Centinela Ave,1.62,,263.45,263.45,265,220,310,,, ,
+West ,West ,Rt2,2,2,Intersection 9,Washington Blvd + Centinela Ave,3.48,,264.20,264.20,265,220,310,,, ,WB left turn
+East,East,Rt1,1,1,Intersection 40,Washington Blvd + Clarington Ave / Madison Ave,2.02,,54.76,54.76,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 40,Washington Blvd + Clarington Ave / Madison Ave,25.48,,259.59,259.59,260,215,305,,, ,use >90deg arc for west
+East,East,Rt1,1,1,Intersection 1,Washington Blvd + Costco Dwy,2.36,,62.23,62.23,60,15,105,,, ,
+West ,West ,Rt1,1,1,Intersection 1,Washington Blvd + Costco Dwy,2.66,,240.92,240.92,240,195,285,,, ,
+West ,West ,Rt2,2,2,Intersection 1,Washington Blvd + Costco Dwy,2.53,,241.17,241.17,240,195,285,,, ,
+East,East,Rt1,1,1,Intersection 29,Washington Blvd + Culver Center Dr,1.13,,42.94,42.94,45,0,90,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 29,Washington Blvd + Culver Center Dr,2.27,,235.51,235.51,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 41,Washington Blvd + Duquesne Ave / Hughes Ave,1.79,,53.80,53.80,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 41,Washington Blvd + Duquesne Ave / Hughes Ave,12.54,,219.99,219.99,220,175,265,,North ,North ,*Trigger point issue. Bus pulls around a corner after trigger point. NB left turn
+East,East,Rt1,1,1,Intersection 27,Washington Blvd + Elenda St / Girard Ave,6.41,,34.92,34.92,35,350,80,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 27,Washington Blvd + Elenda St / Girard Ave,1.26,,222.48,222.48,220,175,265,,West ,West ,
+East,East,Rt1,1,1,Intersection 2,Washington Blvd + Glencoe Ave / Costco Dwy,1.10,,58.70,58.70,60,15,105,,, ,
+West ,West ,Rt1,1,1,Intersection 2,Washington Blvd + Glencoe Ave / Costco Dwy,0.56,,239.24,239.24,240,195,285,,, ,
+West ,West ,Rt2,2,2,Intersection 2,Washington Blvd + Glencoe Ave / Costco Dwy,1.35,,240.25,240.25,240,195,285,,, ,
+East,East,Rt1,1,1,Intersection 10,Washington Blvd + Grand View Blvd,1.31,,82.66,82.66,85,40,130,,, ,
+East,East,Rt2,2,2,Intersection 10,Washington Blvd + Grand View Blvd,1.14,,81.55,81.55,80,35,125,,, ,
+East,East,Rt5,5,5,Intersection 10,Washington Blvd + Grand View Blvd,1.29,,82.17,82.17,80,35,125,,, ,
+West ,West ,Rt1,1,1,Intersection 10,Washington Blvd + Grand View Blvd,1.05,,262.43,262.43,260,215,305,,, ,
+West ,West ,Rt2,2,2,Intersection 10,Washington Blvd + Grand View Blvd,2.64,,262.48,262.48,260,215,305,,, ,
+East,East,Rt1,1,1,Intersection 55,Washington Blvd + Helms Ave,0.84,,54.13,54.13,55,10,100,,, ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 55,Washington Blvd + Helms Ave,0.55,,54.41,54.41,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 55,Washington Blvd + Helms Ave,0.88,,252.71,252.71,255,210,300,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 55,Washington Blvd + Helms Ave,0.23,,252.37,252.37,250,205,295,,, ,
+East,East,Rt1,1,1,Intersection 48,Washington Blvd + Ince Blvd,7.08,,37.29,37.29,35,350,80,,South ,South ,*Trigger point issue. Bus pulls around a corner after trigger point. SB transit-only left turn
+East,East,Rt5,5,5,Intersection 48,Washington Blvd + Ince Blvd,3.48,,37.30,37.30,35,350,80,,South ,South ,*Trigger point issue. Bus pulls around a corner after trigger point. SB transit-only left turn
+East ,East ,Rt7,7,7,Intersection 48,Washington Blvd + Ince Blvd,2.33,,36.79,36.79,35,350,80,,South ,South ,*Trigger point issue. Bus pulls around a corner after trigger point. SB transit-only left turn
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 48,Washington Blvd + Ince Blvd,1.45,,33.66,33.66,35,350,80,,South ,South ,*Trigger point issue. Bus pulls around a corner after trigger point. SB transit-only left turn
+West ,West ,Rt1,1,1,Intersection 48,Washington Blvd + Ince Blvd,1.87,,232.50,232.50,235,190,280,,, ,WB transit-only right turn
+West ,West ,Rt5,5,5,Intersection 48,Washington Blvd + Ince Blvd,1.32,,232.30,232.30,230,185,275,,, ,WB transit-only right turn
+West ,West ,Rt7,7,7,Intersection 48,Washington Blvd + Ince Blvd,1.17,,233.07,233.07,235,190,280,,, ,WB transit-only right turn
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 48,Washington Blvd + Ince Blvd,0.51,,234.34,234.34,235,190,280,,, ,WB transit-only right turn
+East,East,Rt1,1,1,Intersection 11,Washington Blvd + Inglewood Blvd,1.05,,82.03,82.03,80,35,125,,, ,
+East,East,Rt2,2,2,Intersection 11,Washington Blvd + Inglewood Blvd,2.06,,83.78,83.78,85,40,130,,, ,EB right turn
+East,East,Rt5,5,5,Intersection 11,Washington Blvd + Inglewood Blvd,9.49,,86.90,86.90,85,40,130,,, ,
+West ,West ,Rt1,1,1,Intersection 11,Washington Blvd + Inglewood Blvd,2.36,,263.70,263.70,265,220,310,,, ,
+West ,West ,Rt2,2,2,Intersection 11,Washington Blvd + Inglewood Blvd,1.35,,307.57,307.57,310,265,355,,North ,North ,NB left turn
+East,East,Rt1,1,1,Intersection 39,Washington Blvd + Jasmine Ave,1.67,,54.43,54.43,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 39,Washington Blvd + Jasmine Ave,2.31,,233.69,233.69,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 56,Washington Blvd + La Cienaga Ave / McManus Ave,1.22,,72.86,72.86,75,30,120,,, ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 56,Washington Blvd + La Cienaga Ave / McManus Ave,1.12,,71.99,71.99,70,25,115,,, ,EB left turn
+West ,West ,Rt1,1,1,Intersection 56,Washington Blvd + La Cienaga Ave / McManus Ave,1.05,,252.72,252.72,255,210,300,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 56,Washington Blvd + La Cienaga Ave / McManus Ave,33.00,252.72,219.48,252.72,255,210,300,,, ,SB right turn
+East,East,Rt1,1,1,Intersection 57,Washington Blvd + La Cienaga Blvd,2.55,,65.09,65.09,65,20,110,,, ,
+West ,West ,Rt1,1,1,Intersection 57,Washington Blvd + La Cienaga Blvd,1.93,,243.55,243.55,245,200,290,,, ,
+East,East,Rt1,1,1,Intersection 99,Washington Blvd + Landmark St,1.60,,56.11,56.11,55,10,100,,, ,
+East,East,Rt5,5,5,Intersection 99,Washington Blvd + Landmark St,2.59,,51.47,51.47,50,5,95,,, ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 99,Washington Blvd + Landmark St,1.51,,52.44,52.44,50,5,95,,, ,
+West ,West ,Rt1,1,1,Intersection 99,Washington Blvd + Landmark St,2.18,,234.45,234.45,235,190,280,,, ,
+West ,West ,Rt7,7,7,Intersection 99,Washington Blvd + Landmark St,3.64,,235.57,235.57,235,190,280,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 99,Washington Blvd + Landmark St,1.00,,233.84,233.84,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 102,Washington Blvd + McLaughlin Ave,2.73,,35.15,35.15,35,350,80,,, ,
+West ,West ,Rt1,1,1,Intersection 102,Washington Blvd + McLaughlin Ave,10.66,,218.99,218.99,220,175,265,,West ,West ,Requests are inconsistent. Half request westbound (>225) and half request southbound (<225)
+East,East,Rt1,1,1,Intersection 38,Washington Blvd + Motor Ave,1.48,,54.47,54.47,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 38,Washington Blvd + Motor Ave,0.57,,234.35,234.35,235,190,280,,, ,
+South (54),South,Rt3,3,3,Intersection 38 ,Washington Blvd + Motor Ave,1.75,,146.65,146.65,145,100,190,,, ,SB right turn
+South (57),South,Rt3,3,3,Intersection 38 ,Washington Blvd + Motor Ave,0.52,,147.23,147.23,145,100,190,,, ,SB right turn
+East,East,Rt1,1,1,Intersection 54,Washington Blvd + National Bl/Exposition Bl,1.88,,54.00,54.00,55,10,100,,, ,
+East,East,Rt5,5,5,Intersection 54,Washington Blvd + National Bl/Exposition Bl,24.98,54.50,64.69,54.50,55,10,100,,, ,EB right turn
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 54,Washington Blvd + National Bl/Exposition Bl,1.32,,54.55,54.55,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 54,Washington Blvd + National Bl/Exposition Bl,1.18,,234.18,234.18,235,190,280,,, ,
+West ,West ,Rt7,7,7,Intersection 54,Washington Blvd + National Bl/Exposition Bl,2.14,,132.12,132.12,130,85,175,,South ,South ,SB right turn
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 54,Washington Blvd + National Bl/Exposition Bl,0.38,,234.06,234.06,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 30,Washington Blvd + Overland Ave,2.69,,44.70,44.70,45,0,90,,East ,East ,
+North (15),North,Rt3,3,3,Intersection 30,Washington Blvd + Overland Ave,0.82,,322.42,322.42,320,275,5,,, ,
+South (54),South,Rt3,3,3,Intersection 30,Washington Blvd + Overland Ave,43.98,190.73,190.73,190.73,190,145,235,,West ,West ,*High SD due to bus turning off Venice at trigger point
+South (57),South,Rt3,3,3,Intersection 30,Washington Blvd + Overland Ave,0.48,,235.00,235.00,235,190,280,,South ,South ,*Inaccurate due to bus turning off Venice at trigger point
+West ,West ,Rt1,1,1,Intersection 30,Washington Blvd + Overland Ave,2.97,,236.29,236.29,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 3,Washington Blvd + Redwood Ave,0.98,,58.55,58.55,60,15,105,,, ,
+West ,West ,Rt1,1,1,Intersection 3,Washington Blvd + Redwood Ave,0.71,,238.64,238.64,240,195,285,,, ,
+West ,West ,Rt2,2,2,Intersection 3,Washington Blvd + Redwood Ave,1.35,,234.26,234.26,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,0.65,,53.91,53.91,55,10,100,,, ,
+East,East,Rt5,5,5,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,1.36,,53.23,53.23,55,10,100,,, ,
+East ,East ,Rt7,7,7,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,1.57,,52.90,52.90,55,10,100,,, ,EB left turn
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,0.33,,53.78,53.78,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,1.93,,233.89,233.89,235,190,280,,, ,
+West ,West ,Rt5,5,5,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,4.27,,304.04,304.04,305,260,350,,North ,North ,NB left turn
+West ,West ,Rt7,7,7,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,0.87,,234.19,234.19,235,190,280,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 49,Washington Blvd + Robertson Bl/Higuera St,0.59,,234.31,234.31,235,190,280,,, ,
+East,East,Rt1,1,1,Intersection 5,Washington Blvd + Rosabell St,1.52,,58.71,58.71,60,15,105,,, ,
+West ,West ,Rt1,1,1,Intersection 5,Washington Blvd + Rosabell St,13.49,,262.61,262.61,265,220,310,,, ,
+West ,West ,Rt2,2,2,Intersection 5,Washington Blvd + Rosabell St,1.35,,271.70,271.70,270,225,315,,, ,
+East,East,Rt1,1,1,Intersection 15,Washington Blvd + Sawtelle Blvd,1.76,,25.32,25.32,25,340,70,,East ,East ,
+West ,West ,Rt1,1,1,Intersection 15,Washington Blvd + Sawtelle Blvd,1.33,,203.70,203.70,205,160,250,,West ,West ,
+East,East,Rt1,1,1,Intersection 21,Washington Blvd + Sepulveda Blvd,1.68,,24.94,24.94,25,340,70,,East ,East ,
+North,North,Rt6,6,6,Intersection 21,Washington Blvd + Sepulveda Blvd,6.70,,321.82,321.82,320,275,5,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 21,Washington Blvd + Sepulveda Blvd,8.59,,319.88,319.88,320,275,5,,North ,North ,"Inconsistent, probably requests both NB and WB "
+South ,South ,Rt6,6,6,Intersection 21,Washington Blvd + Sepulveda Blvd,1.97,,151.90,151.90,150,105,195,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 21,Washington Blvd + Sepulveda Blvd,2.53,,152.24,152.24,150,105,195,,, ,
+West ,West ,Rt1,1,1,Intersection 21,Washington Blvd + Sepulveda Blvd,1.01,,204.57,204.57,205,160,250,,West ,West ,
+East,East,Rt1,1,1,Intersection 6,Washington Blvd + Washington Pl / Zanja St / Wade St,2.98,,61.41,61.41,60,15,105,,, ,*Too complicated. Ask Andrew.
+West ,West ,Rt1,1,1,Intersection 6,Washington Blvd + Washington Pl / Zanja St / Wade St,4.86,,276.19,276.19,275,230,320,,, ,
+West ,West ,Rt2,2,2,Intersection 6,Washington Blvd + Washington Pl / Zanja St / Wade St,1.35,,277.46,277.46,275,230,320,,, ,
+East,East,Rt1,1,1,Intersection 106,Washington Blvd + Wesley St,1.83,,53.82,53.82,55,10,100,,, ,
+East ,East ,Rt1C1,Rt 1C1,1C1,Intersection 106,Washington Blvd + Wesley St,0.30,,54.51,54.51,55,10,100,,, ,
+West ,West ,Rt1,1,1,Intersection 106,Washington Blvd + Wesley St,2.01,,234.87,234.87,235,190,280,,, ,
+West ,West ,Rt1C1,Rt 1C1,1C1,Intersection 106,Washington Blvd + Wesley St,0.65,,234.44,234.44,235,190,280,,, ,
+East,East,Rt2,2,2,Intersection 7,Washington Pl + Centinela Ave,1.98,,147.92,147.92,150,105,195,,, ,
+East,East,Rt5,5,5,Intersection 7,Washington Pl + Centinela Ave,1.44,,147.96,147.96,150,105,195,,, ,
+North,North,Rt6,6,6,Intersection 19,Washington Pl + Sepulveda Blvd,1.29,,336.47,336.47,335,290,20,,, ,
+North ,North ,Rt6R,Rt 6R,6R,Intersection 19,Washington Pl + Sepulveda Blvd,1.87,,336.67,336.67,335,290,20,,, ,
+South ,South ,Rt6,6,6,Intersection 19,Washington Pl + Sepulveda Blvd,0.61,,146.71,146.71,145,100,190,,, ,
+South ,South ,Rt6R,Rt 6R,6R,Intersection 19,Washington Pl + Sepulveda Blvd,1.31,,147.00,147.00,145,100,190,,, ,
