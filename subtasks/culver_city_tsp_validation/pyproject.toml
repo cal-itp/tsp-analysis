@@ -7,14 +7,11 @@ name="culver_city_tsp_validation"
 dependencies = [
     "geopandas (>=0.14.0, <0.15.0)",
     "pandas (>=2.0.0, <3.0.0)",
-    "jupyter == 1.1.1",
     "folium >= 0.12",
     "matplotlib == 3.10.7",
-    "mapclassify == 2.10.0"
-]
-
-
-[dependency-groups]
-dev = [
-    "ipykernel (>=7.1.0,<8.0.0)"
+    "mapclassify == 2.10.0",
+    "calitp-data-analysis (==2026.1.30)",
+    "ipykernel (>=7.1.0,<8.0.0)",
+    "numpy (>=1.26.4,<2.0.0)",
+    "tqdm (>=4.67.3,<5.0.0)",
 ]
