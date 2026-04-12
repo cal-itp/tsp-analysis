@@ -1,0 +1,16 @@
+[project]
+name = "intersection-delay-exploration"
+version = "0.1.0"
+description = ""
+authors = [{ name = "Anna Paten", email = "anna.paten@dot.ca.gov" }]
+requires-python = ">=3.11.0,<3.12.0"
+readme = "README.md"
+dependencies = [
+    "pandas (>=2.0.0,<3.0.0)",
+    "geopandas (>=0.14.0,<0.15.0)",
+    "calitp-data-analysis (>=2026.3.9,<2027.0.0)",
+    "sqlalchemy (>=2.0.49,<3.0.0)",
+]
+
+[tool.uv]
+package = false
