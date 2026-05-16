@@ -62,3 +62,27 @@ def project_vp_on_shape(
         result.loc[group.index] = projected
 
     return result
+
+
+def project_signals_on_shape(
+    signals: gpd.GeoDataFrame,
+    shape: gpd.GeoDataFrame,
+    max_snap_distance: float,
+) -> pd.Series:
+    """Return each nearby signal's distance (meters) along shape from its start.
+
+    Signals farther than max_snap_distance from the shape are excluded before
+    projection. Returns a Series indexed like the filtered subset of signals.
+
+    Args:
+        signals: GeoDataFrame from get_traffic_signals (columns: id, name, geometry).
+        shape: GeoDataFrame containing single linestring to project onto (same CRS as signals).
+        max_snap_distance: Maximum distance (meters) from the shape to include a signal.
+
+    Returns:
+        Float Series indexed like the filtered subset of signals.
+    """
+    projected_shape_geoseries = shape.to_crs(shape.crs)
+    projected_shape_geom = projected_shape_geoseries.iloc[0]
+    nearby_signals = signals[signals.geometry.map(lambda pt: pt.distance(projected_shape_geom)) <= max_snap_distance]
+    return nearby_signals.geometry.map(projected_shape_geom.project)

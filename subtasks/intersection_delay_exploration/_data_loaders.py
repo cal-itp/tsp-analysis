@@ -3,7 +3,7 @@ import geopandas as gpd
 from calitp_data_analysis.gcs_pandas import GCSPandas
 from calitp_data_analysis import sql
 from calitp_data_analysis.geography_utils import make_routes_gdf
-from constants import CA_NAD83_Albers
+from constants import CA_NAD83_Albers, CULVER_CITY_SIGNAL_LOCATIONS_PATH
 from functools import cache
 
 
@@ -83,41 +83,32 @@ def get_stops_for_shape(service_date: str, feed_key: str, shape_id: str) -> gpd.
         feed_key: Feed key from fct_schedule_feed_downloads.
         shape_id: Shape ID from the GTFS schedule.
 
-    Returns a GeoDataFrame with one row per stop and columns:
-        stop_id, stop_name, n_trips, geometry (Point, EPSG:3310)
+    Returns all stops served by the route associated with shape_id on that
+    service date, across all shapes for that route. Callers should apply a
+    geospatial filter to restrict to stops along the specific shape.
+
+    Returns a GeoDataFrame with columns: stop_id, stop_name, geometry (Point, EPSG:3310).
+    No stop_sequence is available; order by projection onto the shape if needed.
     """
-    #TODO: not confident this is the best way to do this query
     df = sql.query_sql(
         f"""
-        with trips_for_shape as (
-            select distinct trip_id, feed_key, service_date
+        with trip_info as (
+            select route_id
             from `cal-itp-data-infra.mart_gtfs.fct_scheduled_trips`
             where service_date = '{service_date}'
               and feed_key = '{feed_key}'
               and shape_id = '{shape_id}'
-        ),
-        stop_counts as (
-            select
-                stop_arrivals.stop_id,
-                trips_for_shape.feed_key,
-                trips_for_shape.service_date,
-                count(distinct stop_arrivals.trip_id) as n_trips
-            from trips_for_shape
-            inner join `cal-itp-data-infra.mart_gtfs.dim_stop_arrivals` stop_arrivals
-                on trips_for_shape.feed_key = stop_arrivals.feed_key
-                and trips_for_shape.trip_id = stop_arrivals.trip_id
-            group by stop_arrivals.stop_id, trips_for_shape.feed_key, trips_for_shape.service_date
+            limit 1
         )
         select
-            stop_counts.stop_id,
+            scheduled_stops.stop_id,
             scheduled_stops.stop_name,
-            stop_counts.n_trips,
             scheduled_stops.pt_geom
-        from stop_counts
+        from trip_info
         inner join `cal-itp-data-infra.mart_gtfs.fct_daily_scheduled_stops` scheduled_stops
-            on stop_counts.service_date = scheduled_stops.service_date
-            and stop_counts.feed_key = scheduled_stops.feed_key
-            and stop_counts.stop_id = scheduled_stops.stop_id
+            on scheduled_stops.service_date = '{service_date}'
+            and scheduled_stops.feed_key = '{feed_key}'
+            and trip_info.route_id in unnest(scheduled_stops.route_id_array)
         """
     )
     gdf = gpd.GeoDataFrame(
@@ -125,4 +116,17 @@ def get_stops_for_shape(service_date: str, feed_key: str, shape_id: str) -> gpd.
         geometry=gpd.GeoSeries.from_wkt(df["pt_geom"]),
         crs="EPSG:4326",
     ).to_crs(CA_NAD83_Albers)
-    return gdf[["stop_id", "stop_name", "n_trips", "geometry"]]
+    return gdf[["stop_id", "stop_name", "geometry"]]
+
+
+def get_traffic_signals(
+    path: str = CULVER_CITY_SIGNAL_LOCATIONS_PATH,
+) -> gpd.GeoDataFrame:
+    """Load traffic signal locations from a GeoJSON file.
+
+    Returns a GeoDataFrame in EPSG:3310 with all source fields plus an id column
+    reflecting row order.
+    """
+    gdf = gpd.read_file(path).to_crs(CA_NAD83_Albers)
+    gdf["id"] = range(len(gdf))
+    return gdf
