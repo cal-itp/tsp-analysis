@@ -209,3 +209,6 @@ __marimo__/
 
 # osmnx
 cache/
+
+# gis
+*.gqz
