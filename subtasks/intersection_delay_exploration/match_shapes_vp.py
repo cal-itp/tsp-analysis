@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from calitp_data_analysis import sql
@@ -86,3 +87,37 @@ def project_points_on_shape(
     projected_shape_geom = projected_shape_geoseries.iloc[0]
     nearby_points = points[points.geometry.map(lambda pt: pt.distance(projected_shape_geom)) <= max_snap_distance]
     return nearby_points.geometry.map(projected_shape_geom.project)
+
+
+def distances_to_crossing_times(
+    distances_along_shape: pd.Series,
+    smoothed_trip_distances: pd.Series,
+) -> pd.Series:
+    """Look up the time the bus crossed each input distance along its shape.
+
+    Linearly interpolates against a single trip's smoothed distance-over-time
+    trajectory. Input distances outside the trip's distance range are dropped.
+
+    Args:
+        distances_along_shape: Distances (meters) along the trip's shape to
+            look up crossing times for, e.g. signal or stop projections.
+        smoothed_trip_distances: Distance-along-shape (meters) for a single
+            trip, indexed by event_time_datetime and monotonically increasing.
+
+    Returns:
+        Series of crossing timestamps, indexed like the in-range subset of
+        distances_along_shape.
+    """
+    trip_distances_m = smoothed_trip_distances.to_numpy()
+    trip_times_ns = smoothed_trip_distances.index.astype("int64").to_numpy()
+    in_trip_range = (distances_along_shape >= trip_distances_m[0]) & (
+        distances_along_shape <= trip_distances_m[-1]
+    )
+    valid_distances = distances_along_shape[in_trip_range]
+    crossing_times_ns = np.interp(
+        valid_distances.to_numpy(), trip_distances_m, trip_times_ns
+    )
+    return pd.Series(
+        pd.to_datetime(crossing_times_ns.astype("int64"), unit="ns"),
+        index=valid_distances.index,
+    )

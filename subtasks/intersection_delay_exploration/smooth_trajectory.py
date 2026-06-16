@@ -167,15 +167,18 @@ def smooth_distances_per_trip(
         sample_times = np.arange(0.0, times[-1] + freq_seconds, freq_seconds)
         sample_times = sample_times[sample_times <= times[-1]]
 
-        per_trip_smoothed_dataframes.append(
-            pd.DataFrame(
-                {
-                    "TRIP_KEY": trip_key,
-                    "event_time_datetime": t0 + pd.to_timedelta(sample_times, unit="s"),
-                    "distance_along_shape_smoothed": f(sample_times),
-                }
-            )
+        trip_smoothed_dataframe = pd.DataFrame(
+            {
+                "TRIP_KEY": trip_key,
+                "event_time_datetime": t0 + pd.to_timedelta(sample_times, unit="s"),
+                "distance_along_shape_smoothed": f(sample_times),
+            }
         )
+
+        trip_smoothed_dataframe_positive_distance = trip_smoothed_dataframe.loc[
+            trip_smoothed_dataframe["distance_along_shape_smoothed"] >= 0
+        ]
+        per_trip_smoothed_dataframes.append(trip_smoothed_dataframe_positive_distance)
 
     if not per_trip_smoothed_dataframes:
         return pd.DataFrame(
