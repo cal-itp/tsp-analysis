@@ -1,8 +1,97 @@
 import numpy as np
 import pandas as pd
 
-STOPPED_SPEED_THRESHOLD_MPS = 2 * 1609.344 / 3600  # 2 mph in m/s
+STOPPED_SPEED_THRESHOLD_MPS = 2 * 1609.344 / 3600  # 2 mph in m/s #TODO: maybe this should be based on percentiles around the stop area nistead
 MIN_STOPPED_RUN_SECONDS = 5
+
+
+def find_stopped_events(
+    smoothed_trajectory: pd.Series,
+    smoothed_speeds_mps: pd.Series,
+) -> pd.DataFrame:
+    """Run-length-encode slow samples into discrete stopped events.
+
+    A stopped event is a maximal run of consecutive samples below
+    STOPPED_SPEED_THRESHOLD_MPS lasting longer than MIN_STOPPED_RUN_SECONDS.
+
+    Args:
+        smoothed_trajectory: Bus distance (meters) along the matched shape,
+            indexed by time (DatetimeIndex or numeric seconds).
+        smoothed_speeds_mps: Bus speed (m/s), aligned positionally to
+            `smoothed_trajectory`.
+
+    Returns:
+        DataFrame with one row per stopped event and columns duration_s,
+        start_distance_m, end_distance_m. Empty if there are no qualifying events.
+    """
+    trajectory_times = smoothed_trajectory.index
+    if isinstance(trajectory_times, pd.DatetimeIndex):
+        time_seconds_array = (
+            trajectory_times - trajectory_times[0]
+        ).total_seconds().to_numpy()
+    else:
+        time_seconds_array = np.asarray(trajectory_times, dtype=float)
+
+    samples_df = pd.DataFrame({
+        "time_s": time_seconds_array,
+        "distance_m": smoothed_trajectory.to_numpy(dtype=float),
+        "is_slow": (smoothed_speeds_mps < STOPPED_SPEED_THRESHOLD_MPS).to_numpy(),
+    })
+    samples_df["run_id"] = (
+        samples_df["is_slow"] != samples_df["is_slow"].shift()
+    ).cumsum()
+
+    slow_runs_grouped = samples_df[samples_df["is_slow"]].groupby("run_id")
+    stopped_events = pd.DataFrame({
+        "start_time_s": slow_runs_grouped["time_s"].first(),
+        "end_time_s": slow_runs_grouped["time_s"].last(),
+        "duration_s": slow_runs_grouped["time_s"].last() - slow_runs_grouped["time_s"].first(),
+        "start_distance_m": slow_runs_grouped["distance_m"].first(),
+        "end_distance_m": slow_runs_grouped["distance_m"].last(),
+    })
+    return stopped_events[
+        stopped_events["duration_s"] > MIN_STOPPED_RUN_SECONDS
+    ].reset_index(drop=True)
+
+
+def identify_nearside_signals(
+    signals_projected: pd.Series,
+    stops_projected: pd.Series,
+    stops_nearside: pd.Series,
+    nearside_stop_distance: float,
+) -> pd.Series:
+    """Flag signals within `nearside_stop_distance` of any near-side stop.
+
+    Such signals' stopped time is dominated by passenger dwell at the near-side
+    stop rather than signal delay, so callers typically exclude them.
+
+    Args:
+        signals_projected: Distance (meters) along the shape of each signal,
+            indexed by signal identifier.
+        stops_projected: Distance (meters) along the shape of each stop.
+        stops_nearside: Near-side flag per stop, indexed like stops_projected.
+            Values not exactly True are treated as not near-side.
+        nearside_stop_distance: Max signal-to-near-side-stop distance (meters)
+            for the signal to be flagged.
+
+    Returns:
+        Boolean Series indexed like `signals_projected`.
+    """
+    signal_distances_array = signals_projected.to_numpy()
+    nearside_stop_distances_array = stops_projected[stops_nearside == True].to_numpy()
+
+    if nearside_stop_distances_array.size == 0:
+        return pd.Series(False, index=signals_projected.index)
+
+    # Note - we have manually tagged stops as near-side to handle edge cases, so
+    # we use abs to exclude even if the stop is slightly behind the stop line.
+    min_signal_to_nearside_stop_distance = np.abs(
+        signal_distances_array[:, None] - nearside_stop_distances_array[None, :]
+    ).min(axis=1)
+    return pd.Series(
+        min_signal_to_nearside_stop_distance <= nearside_stop_distance,
+        index=signals_projected.index,
+    )
 
 
 def estimate_intersection_time_single_trip(
@@ -62,40 +151,12 @@ def estimate_intersection_time_single_trip(
     signal_distances_array = signals_projected.to_numpy()
 
     # Step 1: identify signals within nearside_stop_distance of any nearside-marked stop
-    nearside_stop_distances_array = stops_projected[stops_nearside == True].to_numpy()
-
-    if nearside_stop_distances_array.size == 0:
-        is_signal_excluded = pd.Series(False, index=signals_projected.index)
-    else:
-        # Note - we have manually tagged signals as nearside to handle edge cases, so we use abs because we want to exclude even if the stop is slightly behind the stop line (e.g. stop is directly on top of a stop line)
-        min_signal_to_nearside_stop_distance = np.abs( 
-            signal_distances_array[:, None] - nearside_stop_distances_array[None, :]
-        ).min(axis=1)
-        is_signal_excluded = pd.Series(
-            min_signal_to_nearside_stop_distance <= nearside_stop_distance,
-            index=signals_projected.index,
-        )
+    is_signal_excluded = identify_nearside_signals(
+        signals_projected, stops_projected, stops_nearside, nearside_stop_distance
+    )
 
     # Steps 2-3: run-length-encode slow samples to find stopped events
-    trajectory_times = smoothed_trajectory.index
-    if isinstance(trajectory_times, pd.DatetimeIndex):
-        time_seconds_array = (trajectory_times - trajectory_times[0]).total_seconds().to_numpy()
-    else:
-        time_seconds_array = np.asarray(trajectory_times, dtype=float)
-
-    samples_df = pd.DataFrame({
-        "time_s": time_seconds_array,
-        "distance_m": smoothed_trajectory.to_numpy(dtype=float),
-        "is_slow": (smoothed_speeds_mps < STOPPED_SPEED_THRESHOLD_MPS).to_numpy(),
-    })
-    samples_df["run_id"] = (samples_df["is_slow"] != samples_df["is_slow"].shift()).cumsum()
-
-    slow_runs_grouped = samples_df[samples_df["is_slow"]].groupby("run_id")
-    stopped_events = pd.DataFrame({
-        "duration_s": slow_runs_grouped["time_s"].last() - slow_runs_grouped["time_s"].first(),
-        "end_distance_m": slow_runs_grouped["distance_m"].last(),
-    })
-    stopped_events = stopped_events[stopped_events["duration_s"] > MIN_STOPPED_RUN_SECONDS]
+    stopped_events = find_stopped_events(smoothed_trajectory, smoothed_speeds_mps)
 
     # Step 4: assignment of stopped-event durations to each signal's upstream range
     if stopped_events.empty or signal_distances_array.size == 0:
