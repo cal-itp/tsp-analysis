@@ -1,5 +1,11 @@
+from pathlib import Path
+
+# Local reference data lives in <subtask>/data; resolve it from this file's
+# location so paths work regardless of the current working directory.
+DATA_DIR = Path(__file__).resolve().parent.parent.joinpath("data")
+
 CA_NAD83_Albers = "EPSG:3310"
-CULVER_CITY_SIGNAL_LOCATIONS_PATH = "culver_signals.geojson"
+CULVER_CITY_SIGNAL_LOCATIONS_PATH = str(DATA_DIR.joinpath("culver_signals.geojson"))
 CULVER_CITY_FEED_KEY = "90a34032bdea10f106a3922133c46444"
 # Intake folder of zipped VehicleState position dumps. Each zip covers one
 # vehicle's events and the folder spans many service dates (2026-01-31 ..

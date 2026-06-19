@@ -90,6 +90,34 @@ def test_signal_delay_no_stops_returns_zero():
     ) == (0.0, 0.0, False)
 
 
+def test_classify_segment_stops_labels_all_types():
+    downstream = 1000.0
+    stops = pd.DataFrame([
+        dict(end_distance_m=downstream - 20, duration_s=30, start_time_s=100, end_time_s=130),
+        dict(end_distance_m=downstream - (sd.SIGNAL_STOP_AREA_M + 50), duration_s=15, start_time_s=70, end_time_s=85),
+        dict(end_distance_m=downstream - 500, duration_s=12, start_time_s=20, end_time_s=32),
+        dict(end_distance_m=downstream - 700, duration_s=20, start_time_s=5, end_time_s=25),
+    ], index=[0, 1, 2, 3])
+    is_dwell = np.array([False, False, False, True])
+
+    labels = sd.classify_segment_stops(stops, is_dwell, _make_speeds(), downstream)
+
+    assert list(labels) == ["uniform", "overflow", "congestion", "dwell"]
+
+
+def test_example_trip_segments_picks_one_per_flavor():
+    daytime = pd.DataFrame([
+        dict(service_date="d", TRIP_KEY="t1", segment_id="s1", uniform_delay_s=10, overflow_delay_s=0, signal_delay_s=10, congestion_delay_s=0),
+        dict(service_date="d", TRIP_KEY="t2", segment_id="s2", uniform_delay_s=5, overflow_delay_s=8, signal_delay_s=13, congestion_delay_s=2),
+        dict(service_date="d", TRIP_KEY="t3", segment_id="s3", uniform_delay_s=0, overflow_delay_s=0, signal_delay_s=0, congestion_delay_s=20),
+    ])
+    examples = sd.example_trip_segments(daytime).set_index("example")
+
+    assert examples.loc["signal (uniform)", "TRIP_KEY"] == "t1"
+    assert examples.loc["overflow", "TRIP_KEY"] == "t2"
+    assert examples.loc["congestion", "TRIP_KEY"] == "t3"
+
+
 # --- baselines ---
 
 def _table(rows):

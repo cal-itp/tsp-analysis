@@ -11,6 +11,12 @@ Run as a script to (re)build the by-date folder:
     uv run preprocess_vehicle_positions.py
 """
 
+import sys
+from pathlib import Path
+
+# Import the flat modules that live in src/.
+sys.path.insert(0, str(Path(__file__).resolve().parent.joinpath("src")))
+
 import geopandas as gpd
 import pandas as pd
 from calitp_data_analysis.gcs_pandas import GCSPandas

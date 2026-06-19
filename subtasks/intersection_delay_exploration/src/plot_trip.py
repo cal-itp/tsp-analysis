@@ -44,7 +44,7 @@ def plot_distance_over_time(
     Returns:
         (figure, axes) tuple for further customization or saving.
     """
-    fig, ax = plt.subplots(figsize=(4, 10))
+    fig, ax = plt.subplots()
     n_trips = len(trips)
     line_alpha = 0.5 if n_trips > 1 else 1.0
 

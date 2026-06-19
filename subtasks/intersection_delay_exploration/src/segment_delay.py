@@ -112,6 +112,64 @@ def _max_speed_between(speeds_by_second: pd.Series, start_s: float, end_s: float
     return float(window.max()) if len(window) else 0.0
 
 
+DELAY_TYPE_COLORS = {
+    "dwell": "tab:gray",
+    "uniform": "tab:blue",
+    "overflow": "tab:purple",
+    "congestion": "tab:orange",
+}
+
+
+def classify_segment_stops(
+    segment_stops: pd.DataFrame,
+    is_dwell: np.ndarray,
+    speeds_by_second: pd.Series,
+    downstream_distance_m: float,
+) -> pd.Series:
+    """Label each in-segment stop dwell / uniform / overflow / congestion.
+
+    - dwell: flagged by `is_dwell` (near a bus stop or near-side signal).
+    - uniform: the non-dwell stop closest to the downstream signal, within
+      SIGNAL_STOP_AREA_M of the stop bar.
+    - overflow: non-dwell stops upstream of the uniform stop, within
+      OVERFLOW_ZONE_M, reached without a faster period (creeping stop-slow-stop).
+    - congestion: every other non-dwell stop.
+
+    Returns a Series of labels indexed like `segment_stops`.
+    """
+    delay_type = pd.Series("congestion", index=segment_stops.index, dtype=object)
+    if len(segment_stops) == 0:
+        return delay_type
+    delay_type[segment_stops.index[is_dwell]] = "dwell"
+
+    non_dwell_stops = segment_stops[~is_dwell]
+    candidates = non_dwell_stops[
+        (non_dwell_stops["end_distance_m"] >= downstream_distance_m - OVERFLOW_ZONE_M)
+        & (non_dwell_stops["end_distance_m"] <= downstream_distance_m)
+    ].sort_values("end_distance_m", ascending=False)  # closest to the signal first
+
+    if candidates.empty:
+        return delay_type
+    signal_stop = candidates.iloc[0]
+    if signal_stop["end_distance_m"] < downstream_distance_m - SIGNAL_STOP_AREA_M:
+        # nearest stop is past the signal stop area -> no stop-bar (uniform) stop
+        return delay_type
+    delay_type[candidates.index[0]] = "uniform"
+
+    previous_stop = signal_stop
+    for stop_index in candidates.index[1:]:
+        upstream_stop = candidates.loc[stop_index]
+        gap_max_speed = _max_speed_between(
+            speeds_by_second, upstream_stop["end_time_s"], previous_stop["start_time_s"]
+        )
+        if gap_max_speed >= FASTER_PERIOD_SPEED_MPS:
+            break  # faster period -> remaining upstream slowdowns are congestion
+        delay_type[stop_index] = "overflow"
+        previous_stop = upstream_stop
+
+    return delay_type
+
+
 def _signal_delay_components(
     non_dwell_stops: pd.DataFrame,
     speeds_by_second: pd.Series,
@@ -119,39 +177,21 @@ def _signal_delay_components(
 ) -> tuple[float, float, bool]:
     """Uniform and overflow stop durations for one trip-segment (uncapped uniform).
 
-    The stop closest to the downstream signal (within SIGNAL_STOP_AREA_M) is the
-    uniform/stop-bar stop. Walking upstream within OVERFLOW_ZONE_M, each further
-    stop reached without a faster period in between is overflow; the first faster
-    period stops the chain.
-
     Returns (uniform_stop_duration_s, overflow_stop_duration_s, has_signal_stop).
     """
-    candidates = non_dwell_stops[
-        (non_dwell_stops["end_distance_m"] >= downstream_distance_m - OVERFLOW_ZONE_M)
-        & (non_dwell_stops["end_distance_m"] <= downstream_distance_m)
-    ].sort_values("end_distance_m", ascending=False)  # closest to the signal first
-
-    if candidates.empty:
-        return 0.0, 0.0, False
-
-    signal_stop = candidates.iloc[0]
-    if signal_stop["end_distance_m"] < downstream_distance_m - SIGNAL_STOP_AREA_M:
-        # nearest stop is past the signal stop area -> no stop-bar (uniform) stop
-        return 0.0, 0.0, False
-
-    uniform_stop_duration_s = float(signal_stop["duration_s"])
-    overflow_stop_duration_s = 0.0
-    previous_stop = signal_stop
-    for _, upstream_stop in candidates.iloc[1:].iterrows():
-        gap_max_speed = _max_speed_between(
-            speeds_by_second, upstream_stop["end_time_s"], previous_stop["start_time_s"]
-        )
-        if gap_max_speed >= FASTER_PERIOD_SPEED_MPS:
-            break  # faster period -> remaining upstream slowdowns are congestion
-        overflow_stop_duration_s += float(upstream_stop["duration_s"])
-        previous_stop = upstream_stop
-
-    return uniform_stop_duration_s, overflow_stop_duration_s, True
+    delay_type = classify_segment_stops(
+        non_dwell_stops,
+        np.zeros(len(non_dwell_stops), dtype=bool),
+        speeds_by_second,
+        downstream_distance_m,
+    )
+    uniform_stop_duration_s = float(
+        non_dwell_stops.loc[delay_type == "uniform", "duration_s"].sum()
+    )
+    overflow_stop_duration_s = float(
+        non_dwell_stops.loc[delay_type == "overflow", "duration_s"].sum()
+    )
+    return uniform_stop_duration_s, overflow_stop_duration_s, bool((delay_type == "uniform").any())
 
 
 def _segment_rows_for_trip(
@@ -551,4 +591,163 @@ def run_segment_delay_analysis(
         signals_projected=signals_projected,
         signal_is_nearside=signal_is_nearside,
         **summary,
+    )
+
+
+def example_trip_segments(daytime_delays: pd.DataFrame) -> pd.DataFrame:
+    """One representative daytime (segment, trip) per delay flavor for plotting:
+    uniform-only signal delay, overflow delay, and congestion-only.
+
+    Returns a DataFrame with columns example, service_date, TRIP_KEY, segment_id,
+    and the delay components, with the largest delay of each kind first.
+    """
+    selectors = {
+        "signal (uniform)": (
+            daytime_delays[
+                (daytime_delays["uniform_delay_s"] > 0)
+                & (daytime_delays["overflow_delay_s"] == 0)
+            ],
+            "uniform_delay_s",
+        ),
+        "overflow": (
+            daytime_delays[daytime_delays["overflow_delay_s"] > 0],
+            "overflow_delay_s",
+        ),
+        "congestion": (
+            daytime_delays[
+                (daytime_delays["signal_delay_s"] == 0)
+                & (daytime_delays["congestion_delay_s"] > 0)
+            ],
+            "congestion_delay_s",
+        ),
+    }
+
+    columns = [
+        "service_date", "TRIP_KEY", "segment_id",
+        "uniform_delay_s", "overflow_delay_s", "signal_delay_s", "congestion_delay_s",
+    ]
+    rows = []
+    for label, (candidates, sort_column) in selectors.items():
+        if candidates.empty:
+            continue
+        best = candidates.sort_values(sort_column, ascending=False).iloc[0]
+        rows.append({"example": label, **{column: best[column] for column in columns}})
+    return pd.DataFrame(rows, columns=["example", *columns])
+
+
+@dataclass
+class TripSegmentDetail:
+    """One trip's trajectory through one segment, with classified stops."""
+
+    trip_positions: pd.Series          # raw projected distance (m) vs datetime, sliced to segment
+    segment: pd.Series                 # the segment row (signals, distances)
+    segment_trajectory: pd.Series      # distance (m) vs datetime, sliced to the segment
+    segment_speeds: pd.Series          # speed (m/s) vs datetime, sliced to the segment
+    stops: pd.DataFrame                # in-segment stops: timestamps, duration, delay_type
+    downstream_signal_distance_m: float
+
+
+def analyze_trip_segment(
+    vehicle_positions: gpd.GeoDataFrame,
+    shapes: gpd.GeoDataFrame,
+    signals: gpd.GeoDataFrame,
+    stops: gpd.GeoDataFrame,
+    shape_id: str,
+    service_date: str,
+    trip_key,
+    segment_id: str,
+    shape_key_map: dict[str, str] = SHAPE_KEY_TO_SHAPE_ID_MAP,
+) -> TripSegmentDetail:
+    """Recompute one trip's smoothed trajectory through one segment and classify
+    its stops, for plotting. Re-smooths just the selected trip."""
+    trip_shape = shapes.set_index("shape_id")["geometry"][[shape_id]]
+    signals_projected = project_points_on_shape(signals, trip_shape, MAX_SNAP_DISTANCE_M)
+    stops_projected = project_points_on_shape(stops, trip_shape, MAX_SNAP_DISTANCE_M)
+    stops_nearside = stops.loc[stops_projected.index, "nearside"]
+    signal_is_nearside = identify_nearside_signals(
+        signals_projected, stops_projected, stops_nearside, NEARSIDE_STOP_DISTANCE_M
+    )
+    segment = build_segments(signals_projected, signal_is_nearside).loc[segment_id]
+    dwell_exclusion_distances = np.concatenate([
+        stops_projected.to_numpy(),
+        signals_projected[signal_is_nearside].to_numpy(),
+    ])
+
+    trip_positions = vehicle_positions[
+        (vehicle_positions["service_date"] == service_date)
+        & (vehicle_positions["TRIP_KEY"] == trip_key)
+    ]
+    distance_along_shape = project_vp_on_shape(
+        trip_positions, shapes, shape_key_map,
+        max_snap_distance=MAX_SNAP_DISTANCE_M, max_shape_jump=MAX_SHAPE_JUMP_M,
+    )
+    smoothed = smooth_distances_per_trip(
+        trip_positions, distance_along_shape, freq_seconds=SMOOTH_FREQ_SECONDS
+    )
+    if smoothed.empty:
+        raise ValueError(
+            f"Trip {trip_key} on {service_date} has too few valid pings to smooth."
+        )
+    speeds_frame = compute_speeds_per_trip(smoothed, freq_seconds=SMOOTH_FREQ_SECONDS)
+    merged = smoothed.merge(
+        speeds_frame, on=["TRIP_KEY", "event_time_datetime"], how="inner"
+    ).sort_values("event_time_datetime")
+
+    trip_start = merged["event_time_datetime"].iloc[0]
+    trip_index = pd.DatetimeIndex(merged["event_time_datetime"])
+    trajectory = pd.Series(merged["distance_along_shape_smoothed"].to_numpy(), index=trip_index)
+    speeds = pd.Series(merged["speed_m_per_s"].to_numpy(), index=trip_index)
+
+    stopped_events = find_stopped_events(trajectory, speeds)
+    speeds_by_second = _speeds_by_second(trajectory, speeds)
+    in_segment = stopped_events[
+        (stopped_events["end_distance_m"] > segment["start_distance_m"])
+        & (stopped_events["end_distance_m"] <= segment["end_distance_m"])
+    ].copy()
+
+    if not in_segment.empty and dwell_exclusion_distances.size:
+        distance_to_exclusion = np.abs(
+            in_segment["end_distance_m"].to_numpy()[:, None]
+            - dwell_exclusion_distances[None, :]
+        ).min(axis=1)
+        is_dwell = distance_to_exclusion <= DWELL_EXCLUSION_DISTANCE_M
+    else:
+        is_dwell = np.zeros(len(in_segment), dtype=bool)
+
+    in_segment["delay_type"] = classify_segment_stops(
+        in_segment, is_dwell, speeds_by_second, segment["end_distance_m"]
+    ).to_numpy()
+    in_segment["start_timestamp"] = trip_start + pd.to_timedelta(in_segment["start_time_s"], unit="s")
+    in_segment["end_timestamp"] = trip_start + pd.to_timedelta(in_segment["end_time_s"], unit="s")
+
+    in_segment_mask = (trajectory >= segment["start_distance_m"]) & (
+        trajectory <= segment["end_distance_m"]
+    )
+
+    # Raw projected GPS pings (pre-smoothing) sliced to the segment, for overlay.
+    raw_distance_along_shape = (
+        pd.Series(
+            distance_along_shape.to_numpy(),
+            index=pd.DatetimeIndex(trip_positions["event_time_datetime"]),
+        )
+        .dropna()
+        .sort_index()
+    )
+    raw_distance_along_shape = raw_distance_along_shape[
+        ~raw_distance_along_shape.index.duplicated(keep="first")
+    ]
+    raw_points_in_segment = raw_distance_along_shape[
+        (raw_distance_along_shape >= segment["start_distance_m"])
+        & (raw_distance_along_shape <= segment["end_distance_m"])
+    ]
+
+    return TripSegmentDetail(
+        trip_positions=raw_points_in_segment,
+        segment=segment,
+        segment_trajectory=trajectory[in_segment_mask],
+        segment_speeds=speeds[in_segment_mask],
+        stops=in_segment[
+            ["start_timestamp", "end_timestamp", "duration_s", "end_distance_m", "delay_type"]
+        ].reset_index(drop=True),
+        downstream_signal_distance_m=segment["end_distance_m"],
     )
