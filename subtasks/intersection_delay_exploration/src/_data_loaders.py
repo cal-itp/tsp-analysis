@@ -1,13 +1,12 @@
-import re
-
 import geopandas as gpd
+import pandas as pd
 from calitp_data_analysis.gcs_geopandas import GCSGeoPandas
 from calitp_data_analysis import sql
 from calitp_data_analysis.geography_utils import make_routes_gdf
 from constants import (
     CA_NAD83_Albers,
     CULVER_CITY_SIGNAL_LOCATIONS_PATH,
-    CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER,
+    CULVER_CITY_VEHICLE_POSITIONS_PATH,
 )
 from functools import cache
 
@@ -17,19 +16,20 @@ def _gcs_geopandas():
     return GCSGeoPandas()
 
 
-def list_available_service_dates() -> list[str]:
-    """Return the sorted service dates (YYYY-MM-DD) for which a per-date
-    geoparquet exists in CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER.
+@cache
+def _all_vehicle_positions() -> gpd.GeoDataFrame:
+    """Read the consolidated vehicle-positions geoparquet once (cached for the
+    session). Covers all service dates; callers filter by event_time_datetime.
     """
-    paths = _gcs_geopandas().gcs_filesystem.glob(
-        CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER + "vehicle_positions_*.parquet"
-    )
-    dates = [
-        match.group(1)
-        for path in paths
-        if (match := re.search(r"vehicle_positions_(\d{4}-\d{2}-\d{2})\.parquet", path))
-    ]
-    return sorted(dates)
+    return _gcs_geopandas().read_parquet(CULVER_CITY_VEHICLE_POSITIONS_PATH)
+
+
+def list_available_service_dates() -> list[str]:
+    """Return the sorted service dates (YYYY-MM-DD) present in the consolidated
+    vehicle-positions geoparquet, derived from event_time_datetime.
+    """
+    dates = _all_vehicle_positions()["event_time_datetime"].dt.date.unique()
+    return sorted(service_date.isoformat() for service_date in dates)
 
 
 def get_culver_city_vehicle_positions(
@@ -38,14 +38,14 @@ def get_culver_city_vehicle_positions(
 ) -> gpd.GeoDataFrame:
     """Load and minimally process Culver City CAD/AVL vehicle positions.
 
-    Reads the per-date geoparquet written by preprocess_vehicle_positions.py for
-    ``service_date`` (a single file rather than every zipped dump). Geometry,
-    CRS (CA_NAD83_Albers), and the EVENT_TIME parse are produced there.
+    Reads the consolidated geoparquet written by preprocess_vehicle_positions.py
+    (a single file rather than every zipped dump) and filters to ``service_date``.
+    Geometry, CRS (CA_NAD83_Albers), and the EVENT_TIME parse are produced there.
 
     Args:
         route_ids: ROUTE_ID values (whitespace-stripped) to keep, e.g. shape keys.
-        service_date: Date string in YYYY-MM-DD format, identifying the by-date
-            geoparquet to read.
+        service_date: Date string in YYYY-MM-DD format; rows whose
+            event_time_datetime falls on this date are kept.
 
     Returns a GeoDataFrame (CRS CA_NAD83_Albers) with:
     - event_time_datetime: parsed datetime from EVENT_TIME
@@ -53,11 +53,9 @@ def get_culver_city_vehicle_positions(
     - geometry: point from LONGITUDE/LATITUDE
     filtered to the requested route_ids.
     """
-    parquet_path = (
-        f"{CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER}"
-        f"vehicle_positions_{service_date}.parquet"
-    )
-    gdf = _gcs_geopandas().read_parquet(parquet_path)
+    service_date_parsed = pd.Timestamp(service_date).date()
+    gdf = _all_vehicle_positions()
+    gdf = gdf.loc[gdf["event_time_datetime"].dt.date == service_date_parsed]
 
     gdf = gdf.sort_values(["TRIP_KEY", "event_time_datetime"], ascending=True)
 

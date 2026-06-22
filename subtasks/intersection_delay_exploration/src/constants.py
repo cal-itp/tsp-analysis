@@ -14,10 +14,11 @@ CULVER_CITY_FEED_KEY = "90a34032bdea10f106a3922133c46444"
 CULVER_CITY_VEHICLE_POSITIONS_FOLDER = (
     "gs://calitp-analytics-data/data-analyses/tsp-analysis/culver_city_2026-02_partial/"
 )
-# Output folder of the preprocessing step: one parquet per service date
-# (vehicle_positions_<YYYY-MM-DD>.parquet), read directly by the loaders.
-CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER = (
-    "gs://calitp-analytics-data/data-analyses/tsp-analysis/processed/culver_city_by_date/"
+# Output of the preprocessing step: a single geoparquet covering all service
+# dates, read directly by the loaders. The service date for each row is derived
+# from its event_time_datetime column.
+CULVER_CITY_VEHICLE_POSITIONS_PATH = (
+    "gs://calitp-analytics-data/data-analyses/tsp-analysis/processed/culver_city_vehicle_positions.parquet"
 )
 # Default service date to analyze; override in notebooks to any date in the folder.
 SERVICE_DATE = "2026-02-03"

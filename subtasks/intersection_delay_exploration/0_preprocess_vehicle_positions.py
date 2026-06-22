@@ -1,12 +1,13 @@
-"""Regroup zipped VehicleState position dumps by service date.
+"""Consolidate zipped VehicleState position dumps into a single geoparquet.
 
 The intake folder holds one ``.txt.zip`` per vehicle, each spanning a single
 service day, but the folder as a whole covers many dates and the filenames
 encode the dump time, not the event date. Reading all of them on every analysis
-run is slow, so this step reads them once, groups rows by the local EVENT_TIME
-date, and writes one parquet per service date that the loaders can read directly.
+run is slow, so this step reads them once, parses the local EVENT_TIME, and
+writes a single geoparquet that the loaders can read directly. The service date
+for each row is recovered downstream from the ``event_time_datetime`` column.
 
-Run as a script to (re)build the by-date folder:
+Run as a script to (re)build the consolidated parquet:
 
     uv run preprocess_vehicle_positions.py
 """
@@ -24,7 +25,7 @@ from calitp_data_analysis.gcs_geopandas import GCSGeoPandas
 from constants import (
     CA_NAD83_Albers,
     CULVER_CITY_VEHICLE_POSITIONS_FOLDER,
-    CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER,
+    CULVER_CITY_VEHICLE_POSITIONS_PATH,
 )
 
 
@@ -38,18 +39,17 @@ def _read_one_zip(gcs: GCSPandas, path: str) -> pd.DataFrame:
     )
 
 
-def build_vehicle_positions_by_date(
+def build_vehicle_positions(
     intake_folder: str = CULVER_CITY_VEHICLE_POSITIONS_FOLDER,
-    output_folder: str = CULVER_CITY_VEHICLE_POSITIONS_BY_DATE_FOLDER,
-) -> list[str]:
-    """Read every zipped VehicleState dump in ``intake_folder``, group rows by
-    their local EVENT_TIME date, and write one geoparquet per date to
-    ``output_folder`` as ``vehicle_positions_<YYYY-MM-DD>.parquet``.
+    output_path: str = CULVER_CITY_VEHICLE_POSITIONS_PATH,
+) -> int:
+    """Read every zipped VehicleState dump in ``intake_folder`` and write them as
+    a single geoparquet to ``output_path``.
 
-    Each file is a GeoDataFrame in CA_NAD83_Albers with an ``event_time_datetime``
+    The output is a GeoDataFrame in CA_NAD83_Albers with an ``event_time_datetime``
     column and point geometry built from LONGITUDE/LATITUDE. Rows whose EVENT_TIME
     cannot be parsed (e.g. status rows with no timestamp) or that lack
-    LONGITUDE/LATITUDE are dropped. Returns the service dates written, sorted.
+    LONGITUDE/LATITUDE are dropped. Returns the number of rows written.
     """
     gcs = GCSPandas()
     gcs_geo = GCSGeoPandas()
@@ -86,23 +86,11 @@ def build_vehicle_positions_by_date(
         .to_crs(CA_NAD83_Albers)
     )
 
-    written_service_dates = []
-    for service_date, positions_for_date in all_positions.groupby(
-        all_positions["event_time_datetime"].dt.date
-    ):
-        print(type(positions_for_date))
-        service_date_str = service_date.isoformat()
-        output_path = (
-            f"{output_folder}vehicle_positions_{service_date_str}.parquet"
-        )
-        gcs_geo.geo_data_frame_to_parquet(positions_for_date, output_path)
-        written_service_dates.append(service_date_str)
+    gcs_geo.geo_data_frame_to_parquet(all_positions, output_path)
 
-    return sorted(written_service_dates)
+    return len(all_positions)
 
 
 if __name__ == "__main__":
-    service_dates = build_vehicle_positions_by_date()
-    print(f"Wrote {len(service_dates)} service dates:")
-    for service_date in service_dates:
-        print(f"  {service_date}")
+    row_count = build_vehicle_positions()
+    print(f"Wrote {row_count:,} rows to {CULVER_CITY_VEHICLE_POSITIONS_PATH}")
