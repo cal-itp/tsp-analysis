@@ -20,10 +20,23 @@ CULVER_CITY_VEHICLE_POSITIONS_FOLDER = (
 CULVER_CITY_VEHICLE_POSITIONS_PATH = (
     "gs://calitp-analytics-data/data-analyses/tsp-analysis/processed/culver_city_vehicle_positions.parquet"
 )
+# Output of the map-matching step: every consolidated position with its matched
+# GTFS shape_id and distance_along_shape, so the projection isn't recomputed in
+# each notebook. A geoparquet (carries geometry).
+CULVER_CITY_MATCHED_VEHICLE_POSITIONS_PATH = (
+    "gs://calitp-analytics-data/data-analyses/tsp-analysis/processed/culver_city_matched_vehicle_positions.parquet"
+)
+# Output of the smoothing step: per-trip smoothed distance-along-shape and speed,
+# on an even SMOOTH_FREQ_SECONDS time grid. Columns: service_date, shape_id,
+# TRIP_KEY, event_time_datetime, distance_along_shape_smoothed, speed_m_per_s.
+CULVER_CITY_SMOOTHED_VEHICLE_POSITIONS_PATH = (
+    "gs://calitp-analytics-data/data-analyses/tsp-analysis/processed/culver_city_smoothed_vehicle_positions.parquet"
+)
 # Default service date to analyze; override in notebooks to any date in the folder.
 SERVICE_DATE = "2026-02-03"
 MAX_SNAP_DISTANCE_M = 20
 MAX_SHAPE_JUMP_M = 200
+SMOOTH_FREQ_SECONDS = 1.0  # smoothing/speed sample spacing
 
 SHAPE_KEY_TO_SHAPE_ID_MAP = {
     "105": "shp-1-05",

@@ -2,14 +2,19 @@
 
 The intake folder holds one ``.txt.zip`` per vehicle, each spanning a single
 service day, but the folder as a whole covers many dates and the filenames
-encode the dump time, not the event date. Reading all of them on every analysis
-run is slow, so this step reads them once, parses the local EVENT_TIME, and
-writes a single geoparquet that the loaders can read directly. The service date
-for each row is recovered downstream from the ``event_time_datetime`` column.
+encode the dump time, not the event date. Reading all of them is slow, so this
+step does it once: it reads every zipped dump, parses the local EVENT_TIME, and
+writes a single geoparquet of raw positions (the service date for each row is
+recovered downstream from the ``event_time_datetime`` column).
+
+This is stage 0 of preprocessing. Map-matching and smoothing live in
+``0_map_match_and_smooth.py``, which reads this consolidated parquet — kept
+separate so the slow zip-reading step isn't repeated when only the matching or
+smoothing changes.
 
 Run as a script to (re)build the consolidated parquet:
 
-    uv run preprocess_vehicle_positions.py
+    uv run 0_preprocess_vehicle_positions.py
 """
 
 import sys
@@ -42,14 +47,14 @@ def _read_one_zip(gcs: GCSPandas, path: str) -> pd.DataFrame:
 def build_vehicle_positions(
     intake_folder: str = CULVER_CITY_VEHICLE_POSITIONS_FOLDER,
     output_path: str = CULVER_CITY_VEHICLE_POSITIONS_PATH,
-) -> int:
+) -> gpd.GeoDataFrame:
     """Read every zipped VehicleState dump in ``intake_folder`` and write them as
     a single geoparquet to ``output_path``.
 
     The output is a GeoDataFrame in CA_NAD83_Albers with an ``event_time_datetime``
     column and point geometry built from LONGITUDE/LATITUDE. Rows whose EVENT_TIME
     cannot be parsed (e.g. status rows with no timestamp) or that lack
-    LONGITUDE/LATITUDE are dropped. Returns the number of rows written.
+    LONGITUDE/LATITUDE are dropped. Returns the written GeoDataFrame.
     """
     gcs = GCSPandas()
     gcs_geo = GCSGeoPandas()
@@ -88,9 +93,9 @@ def build_vehicle_positions(
 
     gcs_geo.geo_data_frame_to_parquet(all_positions, output_path)
 
-    return len(all_positions)
+    return all_positions
 
 
 if __name__ == "__main__":
-    row_count = build_vehicle_positions()
-    print(f"Wrote {row_count:,} rows to {CULVER_CITY_VEHICLE_POSITIONS_PATH}")
+    positions = build_vehicle_positions()
+    print(f"Wrote {len(positions):,} positions to {CULVER_CITY_VEHICLE_POSITIONS_PATH}")
