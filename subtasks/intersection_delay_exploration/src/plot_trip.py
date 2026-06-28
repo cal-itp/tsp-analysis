@@ -34,8 +34,7 @@ def plot_distance_over_time(
         signal_delays_s: Optional per-signal delay (seconds) used for delay
             labels and emphasis. Omit (e.g. in multi-trip mode) to skip
             labels and draw all signal lines uniformly.
-        trips_smoothed: Optional smoothed-trajectory dataframes; must align
-            with `trips` by position.
+        trips_smoothed: Optional smoothed-trajectory series; indexed by datetime
         highlight_delay_threshold_s: Signals with delay above this value are
             emphasized. Only applied when signal_delays_s is provided.
         title: Optional axis title. Defaults to a sensible value based on
@@ -47,12 +46,11 @@ def plot_distance_over_time(
     fig, ax = plt.subplots()
     n_trips = len(trips)
     line_alpha = 0.5 if n_trips > 1 else 1.0
-
     for i, trip in enumerate(trips):
         trip_start = trip["event_time_datetime"].min()
         elapsed_s = (trip["event_time_datetime"] - trip_start).dt.total_seconds()
         ax.plot(
-            trip["distance_along_shape"] / M_PER_MILE,
+            trip["distance_along_shape"],
             elapsed_s,
             marker="o", markersize=3, linestyle="None",
             alpha=line_alpha,
@@ -61,7 +59,7 @@ def plot_distance_over_time(
             smoothed = trips_smoothed[i]
             elapsed_s_smoothed = (smoothed["event_time_datetime"] - trip_start).dt.total_seconds()
             ax.plot(
-                smoothed["distance_along_shape_smoothed"] / M_PER_MILE,
+                smoothed["distance_along_shape_smoothed"],
                 elapsed_s_smoothed,
                 color="red", linewidth=1.5, alpha=line_alpha,
             )
@@ -105,7 +103,7 @@ def plot_distance_over_time(
         else:
             title = f"{n_trips} trips — distance over elapsed time"
 
-    ax.set_xlabel("Distance along shape (mi)")
+    ax.set_xlabel("Distance along shape (meters)")
     ax.set_ylabel("Elapsed time from trip start (s)")
     ax.set_title(title)
     ax.legend()

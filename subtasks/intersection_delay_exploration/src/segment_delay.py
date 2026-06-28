@@ -33,16 +33,17 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 
-from delay_calculation import find_stopped_events, identify_nearside_signals
-from match_shapes_vp import (
+from .delay_calculation import find_stopped_events, identify_nearside_signals
+from .match_shapes_vp import (
     distances_to_crossing_times,
     project_points_on_shape,
     project_vp_on_shape,
 )
-from smooth_trajectory import compute_speeds_per_trip, smooth_distances_per_trip
-from constants import (
+from .smooth_trajectory import compute_speeds_per_trip, smooth_distances_per_trip
+from .constants import (
     MAX_SHAPE_JUMP_M,
     MAX_SNAP_DISTANCE_M,
+    MAX_SPEED_M_S,
     SHAPE_KEY_TO_SHAPE_ID_MAP,
 )
 
@@ -278,6 +279,7 @@ def _segment_rows_for_date(
         shape_key_map,
         max_snap_distance=MAX_SNAP_DISTANCE_M,
         max_shape_jump=MAX_SHAPE_JUMP_M,
+        max_speed_between_pings=MAX_SPEED_M_S
     )
     smoothed = smooth_distances_per_trip(
         vehicle_positions_for_date, distance_along_shape, freq_seconds=SMOOTH_FREQ_SECONDS
@@ -680,6 +682,7 @@ def analyze_trip_segment(
     distance_along_shape = project_vp_on_shape(
         trip_positions, shapes, shape_key_map,
         max_snap_distance=MAX_SNAP_DISTANCE_M, max_shape_jump=MAX_SHAPE_JUMP_M,
+        max_speed_between_pings=MAX_SPEED_M_S
     )
     smoothed = smooth_distances_per_trip(
         trip_positions, distance_along_shape, freq_seconds=SMOOTH_FREQ_SECONDS

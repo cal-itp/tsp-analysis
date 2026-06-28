@@ -4,7 +4,7 @@ from calitp_data_analysis.gcs_geopandas import GCSGeoPandas
 from calitp_data_analysis.gcs_pandas import GCSPandas
 from calitp_data_analysis import sql
 from calitp_data_analysis.geography_utils import make_routes_gdf
-from constants import (
+from .constants import (
     CA_NAD83_Albers,
     CULVER_CITY_MATCHED_VEHICLE_POSITIONS_PATH,
     CULVER_CITY_SIGNAL_LOCATIONS_PATH,

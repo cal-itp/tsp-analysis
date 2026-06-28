@@ -3,7 +3,7 @@ import pandas as pd
 import geopandas as gpd
 from calitp_data_analysis import sql
 from calitp_data_analysis.geography_utils import make_routes_gdf
-from constants import CA_NAD83_Albers, CULVER_CITY_FEED_KEY, SERVICE_DATE
+from .constants import CA_NAD83_Albers, CULVER_CITY_FEED_KEY, SERVICE_DATE
 
 
 def project_vp_on_shape(
@@ -57,8 +57,14 @@ def project_vp_on_shape(
         projected[snap_dist > max_snap_distance] = float("nan")
 
         # Null out points where consecutive projected distances jump too far within a trip
-        jump = group.assign(_proj=projected).groupby("TRIP_KEY")["_proj"].diff().abs()
-        projected[jump > max_shape_jump] = float("nan")
+        jump = group.assign(_proj=projected).groupby("TRIP_KEY")["_proj"].diff()
+        jump_indices = (jump.abs() > max_shape_jump)
+        last_jump = ()
+        #TODO: there are instances where there are multiple jumped positions in a row, which this doesn't catch
+        # we're trying to lookahead to see where those are, to make sure we get all of them
+        # i'm really confused about how to do that without ugly code
+
+        projected[jump_indices] = float("nan")
 
         result.loc[group.index] = projected
 
