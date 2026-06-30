@@ -32,15 +32,21 @@ def project_vp_on_shape(
     # Build a shape_id -> LineString lookup for fast access per group
     shape_geom = shapes.set_index("shape_id")["geometry"]
 
+    # The shape-jump filter compares each ping to its neighbours within a trip,
+    # so rows must be in time order; sort here rather than trust the caller.
+    vehicle_positions_by_time = vehicle_positions.sort_values(
+        ["TRIP_KEY", "event_time_datetime"]
+    )
+
     # Map each vehicle position's ROUTE_ID to the corresponding GTFS shape_id
-    vp_shape_ids = vehicle_positions["ROUTE_ID"].str.strip().map(shape_key_map)
+    vp_shape_ids = vehicle_positions_by_time["ROUTE_ID"].str.strip().map(shape_key_map)
 
     # Default all rows to NaN; filled in below for rows with a matched shape
     result = pd.Series(
         float("nan"), index=vehicle_positions.index, name="distance_along_shape"
     )
 
-    for shape_id, group in vehicle_positions.groupby(vp_shape_ids):
+    for shape_id, group in vehicle_positions_by_time.groupby(vp_shape_ids):
         line = shape_geom.get(shape_id)
         if line is None:
             continue
@@ -56,15 +62,16 @@ def project_vp_on_shape(
         # Null out points that are too far from the shape to be reliable
         projected[snap_dist > max_snap_distance] = float("nan")
 
-        # Null out points where consecutive projected distances jump too far within a trip
-        jump = group.assign(_proj=projected).groupby("TRIP_KEY")["_proj"].diff()
-        jump_indices = (jump.abs() > max_shape_jump)
-        last_jump = ()
-        #TODO: there are instances where there are multiple jumped positions in a row, which this doesn't catch
-        # we're trying to lookahead to see where those are, to make sure we get all of them
-        # i'm really confused about how to do that without ugly code
-
-        projected[jump_indices] = float("nan")
+        # Null out points that jump away from the trip's local trajectory.
+        # Comparing each point to a short centered rolling median (rather than the
+        # immediately preceding point) catches runs of several bad points in a row,
+        # since the good points in the window keep the median on the real path.
+        local_trajectory = (
+            group.assign(_proj=projected)
+            .groupby("TRIP_KEY")["_proj"]
+            .transform(lambda trip: trip.rolling(5, center=True, min_periods=1).median())
+        )
+        projected = projected.mask((projected - local_trajectory).abs() > max_shape_jump)
 
         result.loc[group.index] = projected
 

@@ -279,7 +279,6 @@ def _segment_rows_for_date(
         shape_key_map,
         max_snap_distance=MAX_SNAP_DISTANCE_M,
         max_shape_jump=MAX_SHAPE_JUMP_M,
-        max_speed_between_pings=MAX_SPEED_M_S
     )
     smoothed = smooth_distances_per_trip(
         vehicle_positions_for_date, distance_along_shape, freq_seconds=SMOOTH_FREQ_SECONDS
@@ -682,7 +681,6 @@ def analyze_trip_segment(
     distance_along_shape = project_vp_on_shape(
         trip_positions, shapes, shape_key_map,
         max_snap_distance=MAX_SNAP_DISTANCE_M, max_shape_jump=MAX_SHAPE_JUMP_M,
-        max_speed_between_pings=MAX_SPEED_M_S
     )
     smoothed = smooth_distances_per_trip(
         trip_positions, distance_along_shape, freq_seconds=SMOOTH_FREQ_SECONDS

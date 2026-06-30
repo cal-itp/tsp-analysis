@@ -83,7 +83,6 @@ def build_matched_vehicle_positions(
             shape_key_map,
             max_snap_distance=MAX_SNAP_DISTANCE_M,
             max_shape_jump=MAX_SHAPE_JUMP_M,
-            max_speed_between_pings=MAX_SPEED_M_S
         )
         matched_for_date = positions_for_date.assign(
             shape_id=shape_ids.astype("string"),
