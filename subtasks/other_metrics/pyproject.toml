@@ -1,0 +1,19 @@
+[project]
+name = "tsp_metrics_demos"
+version = "0.1.0"
+description = "Airflow DAGs and plugins for cal-itp-data-infra"
+readme = "README.md"
+requires-python = ">=3.11.6"
+dependencies = [
+    "geopandas (>=0.14.0, <0.15.0)",
+    "pandas (>=2.0.0, <3.0.0)",
+    "folium >= 0.12",
+    "matplotlib == 3.10.7",
+    "mapclassify == 2.10.0",
+    "ipykernel>=7.1.0,<8.0.0",
+    "numpy (>=1.26.4,<2.0.0)",
+    "sqlalchemy",
+    "sqlalchemy-bigquery",
+    "google-cloud-bigquery-storage>=2.39.0",
+    "pyarrow>=25.0.0",
+]
