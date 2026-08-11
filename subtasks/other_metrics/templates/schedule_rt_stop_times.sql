@@ -1,3 +1,5 @@
+-- gets schedule + rt stop times for timepoints
+
 -- the feed in effect can change part way through a multi-date window, so pair
 -- each service date with the schedule feed that was actually active on it
 with feed_dates as (
@@ -11,12 +13,14 @@ with feed_dates as (
         {%- endfor %}
     ])
 ),
+-- get entries from dim_stop_times. we need this because it's the only table that exposes timepoint
 stop_times_valid_on_date as (
     select feed_key, stop_id, trip_id, timepoint, stop_sequence from mart_gtfs.dim_stop_times
     where
-        _feed_valid_from in ('{{ FEED_VALID_FROMS | join("', '") }}')
+        _feed_valid_from in ('{{ FEED_VALID_FROMS | join("', '") }}') -- feed_valid_from used to partition dim_stop_times
         and feed_key in ('{{ FEED_KEYS | join("', '") }}')
 ),
+-- get all trips on the correct date
 valid_trips as (
     select service_date, trip_id, feed_key, shape_id, direction_id
     from mart_gtfs.fct_scheduled_trips
@@ -30,6 +34,7 @@ valid_trips as (
 ),
 -- determine timepoint status
 -- a stop counts as a timepoint only if it is one on every trip on every selected date
+-- todo: consider a better way of determining this / get timepoint locations from agencies instead
 stop_times_summary_on_route as (
     select
         stop_times_valid_on_date.stop_id,
@@ -41,13 +46,14 @@ stop_times_summary_on_route as (
     using(trip_id, feed_key)
     group by stop_id, shape_id
 ),
--- determine stop sequence
+-- get schedule stop sequences
 stop_sequence_values as (
     select distinct stop_id, stop_sequence
     from stop_times_valid_on_date
     inner join valid_trips
     using(trip_id, feed_key)
 ),
+-- join stop time grain data to stops, to get geometry and aggregate
 -- TODO: determine whether stop_sequence is guaranteed to match the rt stop sequence
 --   TODO: so we can use it as a merge key (as assumed), or if we need to use stop_id instead
 timepoints_on_route as (
@@ -70,6 +76,7 @@ timepoints_on_route as (
         and stop_times_summary_on_route.n_timepoint = stop_times_summary_on_route.n_stop_times
     group by 1, 2, 3, 4, 5
 ),
+-- get rt data
 rt_stop_times as (
     select
         service_date,
@@ -86,12 +93,13 @@ rt_stop_times as (
     where service_date in ('{{ TARGET_DATES | join("', '") }}')
     and schedule_base64_url in ('{{ SCHEDULE_BASE64_URLS | join("', '") }}')
 )
-
+-- get rt stop arrivals
 select
     rt_stop_times.service_date,
     rt_stop_times.trip_id,
     rt_stop_times.trip_key,
     rt_stop_times.stop_id,
+    valid_trips.feed_key,
     valid_trips.shape_id,
     rt_stop_times.stop_sequence,
     rt_stop_times.actual_arrival_pacific,
