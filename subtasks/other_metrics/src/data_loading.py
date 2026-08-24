@@ -211,3 +211,60 @@ def get_schedule_rt_stop_times(
         ),
         engine,
     )
+
+
+def get_rt_headways(
+    engine: Engine,
+    env: Environment,
+    constant_macros: dict,
+    *,
+    feed_dates: pd.DataFrame,
+    shape_ids: list[str],
+) -> pd.DataFrame:
+    """Get the realtime headway between every pair of consecutive trips.
+
+    Runs templates/rt_headways.sql. A headway is the gap in service at a stop:
+    the time from one vehicle pulling out to the next one pulling in, so it runs
+    from the earlier trip's actual departure to the later trip's actual arrival
+    and is shorter than the trip-to-trip interval by the dwell.
+
+    Unlike :func:`get_schedule_rt_stop_times` this covers every stop on the
+    pattern, not only the timepoints.
+
+    Trips are paired within a service pattern, in the order they actually
+    reached the stop. The last trip to call at a stop starts no headway, so n
+    trips give n - 1 rows per stop.
+
+    Args:
+        engine: SQLAlchemy engine pointed at the warehouse.
+        env: Jinja environment loading from templates/.
+        constant_macros: TARGET_DATES, TARGET_ROUTE_SHORT_NAME and
+            TARGET_SCHEDULE_FEED.
+        feed_dates: as returned by :func:`get_schedule_feed_entries`, so
+            carrying ``base64_url``.
+        shape_ids: the service patterns to report on.
+
+    Returns:
+        One row per consecutive pair of trips at a stop, keyed by
+        ``first_trip_key``, ``second_trip_key`` and ``stop_sequence``, and
+        carrying ``stop_id``, ``shape_id``, ``first_actual_departure``,
+        ``second_actual_arrival`` and ``headway_seconds`` -- the gap between the
+        two timestamps.
+
+        NOTE: nothing stops a pair spanning midnight, so the last trip of one
+        service date can pair with the first of the next.
+    """
+    return pd.read_sql_query(
+        env.get_template("rt_headways.sql").render(
+            {
+                "FEED_DATES": feed_dates.to_dict("records"),
+                "FEED_KEYS": feed_dates["feed_key"].drop_duplicates().to_list(),
+                "SCHEDULE_BASE64_URLS": feed_dates["base64_url"]
+                .drop_duplicates()
+                .to_list(),
+                "SHAPE_IDS": shape_ids,
+                **constant_macros,
+            }
+        ),
+        engine,
+    )
