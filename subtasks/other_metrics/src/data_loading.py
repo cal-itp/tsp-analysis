@@ -213,7 +213,7 @@ def get_schedule_rt_stop_times(
     )
 
 
-def get_rt_headways(
+def get_schedule_rt_headways(
     engine: Engine,
     env: Environment,
     constant_macros: dict,
@@ -221,19 +221,32 @@ def get_rt_headways(
     feed_dates: pd.DataFrame,
     shape_ids: list[str],
 ) -> pd.DataFrame:
-    """Get the realtime headway between every pair of consecutive trips.
+    """Get the scheduled and realtime headway between consecutive trips.
 
-    Runs templates/rt_headways.sql. A headway is the gap in service at a stop:
-    the time from one vehicle pulling out to the next one pulling in, so it runs
-    from the earlier trip's actual departure to the later trip's actual arrival
-    and is shorter than the trip-to-trip interval by the dwell.
+    Runs templates/schedule_rt_headways.sql. A headway is the gap in service at
+    a stop: the time from one vehicle pulling out to the next one pulling in.
+    The realtime side measures it between the actual departure and the actual
+    arrival; the scheduled side is the same gap between the times
+    dim_stop_arrivals published for those same two trips. Having both on one row
+    is what makes an excess wait computable.
 
     Unlike :func:`get_schedule_rt_stop_times` this covers every stop on the
     pattern, not only the timepoints.
 
-    Trips are paired within a service pattern, in the order they actually
-    reached the stop. The last trip to call at a stop starts no headway, so n
-    trips give n - 1 rows per stop.
+    Trips are paired within a service pattern and a service date, in the order
+    they actually reached the stop. The last trip to call at a stop on a date
+    starts no headway, so n trips on a date give n - 1 rows per stop.
+
+    Pairs never span two service dates. GTFS keeps a trip that runs past
+    midnight on the date it was listed under, publishing it in hours past 24, so
+    dim_stop_arrivals counts each trip's seconds from midnight on its own date
+    and the count restarts at the boundary; a pair spanning it would report a
+    scheduled headway nearly a day negative. Reporting is by service date rather
+    than by calendar date for that reason, and because how an agency splits its
+    service between two dates is its own business. The overnight gap between one
+    date's last trip and the next date's first is therefore not reported as a
+    headway at all. Within a date the pairing is unaffected: a trip departing
+    23:45 still pairs with the 24:00 one behind it.
 
     Args:
         engine: SQLAlchemy engine pointed at the warehouse.
@@ -241,24 +254,33 @@ def get_rt_headways(
         constant_macros: TARGET_DATES, TARGET_ROUTE_SHORT_NAME and
             TARGET_SCHEDULE_FEED.
         feed_dates: as returned by :func:`get_schedule_feed_entries`, so
-            carrying ``base64_url``.
+            carrying ``base64_url`` and ``_valid_from``.
         shape_ids: the service patterns to report on.
 
     Returns:
         One row per consecutive pair of trips at a stop, keyed by
         ``first_trip_key``, ``second_trip_key`` and ``stop_sequence``, and
-        carrying ``stop_id``, ``shape_id``, ``first_actual_departure``,
-        ``second_actual_arrival`` and ``headway_seconds`` -- the gap between the
-        two timestamps.
+        carrying ``service_date``, ``stop_id``, ``shape_id``,
+        ``first_actual_departure``, ``second_actual_arrival``,
+        ``rt_headway_seconds``, ``first_scheduled_departure_sec``,
+        ``second_scheduled_arrival_sec`` and ``scheduled_headway_seconds``.
 
-        NOTE: nothing stops a pair spanning midnight, so the last trip of one
-        service date can pair with the first of the next.
+        ``service_date`` is the date both trips in the pair were listed under,
+        which is not necessarily the calendar date either of them ran on.
+
+        The scheduled columns are seconds since midnight on that service date,
+        as dim_stop_arrivals stores them, and can exceed 86400 for a trip
+        running past midnight. They are null where the schedule does not cover a
+        trip the feed reported running; the realtime side is always populated.
     """
     return pd.read_sql_query(
-        env.get_template("rt_headways.sql").render(
+        env.get_template("schedule_rt_headways.sql").render(
             {
                 "FEED_DATES": feed_dates.to_dict("records"),
                 "FEED_KEYS": feed_dates["feed_key"].drop_duplicates().to_list(),
+                "FEED_VALID_FROMS": feed_dates["_valid_from"]
+                .drop_duplicates()
+                .to_list(),
                 "SCHEDULE_BASE64_URLS": feed_dates["base64_url"]
                 .drop_duplicates()
                 .to_list(),
