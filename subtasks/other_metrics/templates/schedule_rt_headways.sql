@@ -1,9 +1,13 @@
 -- gets scheduled and realtime headways between consecutive trips, at every stop
 
--- a headway is the gap in service at a stop: the time from one vehicle pulling
--- out to the next one pulling in. The realtime side measures it between the
--- actual departure and the actual arrival; the scheduled side is the same gap
--- between the times dim_stop_arrivals published for those same two trips.
+-- a headway is the gap between vehicles at a stop: the time from one pulling out
+-- to the next one pulling out. Both sides measure it departure to departure --
+-- the realtime one between the actual departures, the scheduled one between the
+-- departures dim_stop_arrivals published for those same two trips.
+--
+-- measuring to the next arrival instead would fold the second vehicle's dwell
+-- into the gap, so the same 15 minute service would report a different headway
+-- at a stop where buses stand longer. Nothing about the service differs there.
 
 -- the feed in effect can change part way through a multi-date window, so pair
 -- each service date with the schedule feed that was actually active on it
@@ -39,7 +43,6 @@ rt_stop_times as (
         trip_key,
         stop_id,
         stop_sequence,
-        actual_arrival_pacific,
         actual_departure_pacific,
     from mart_gtfs.fct_stop_time_metrics
     inner join feed_dates
@@ -56,7 +59,6 @@ stop_arrivals as (
         trip_id,
         stop_id,
         stop_sequence,
-        arrival_sec,
         departure_sec,
     from mart_gtfs.dim_stop_arrivals
     where
@@ -83,10 +85,8 @@ trip_stops as (
         rt_stop_times.trip_key,
         rt_stop_times.stop_id,
         rt_stop_times.stop_sequence,
-        rt_stop_times.actual_arrival_pacific,
         rt_stop_times.actual_departure_pacific,
         valid_trips.shape_id,
-        stop_arrivals.arrival_sec as scheduled_arrival_sec,
         stop_arrivals.departure_sec as scheduled_departure_sec,
     from rt_stop_times
     -- trip_id is only unique within a service date
@@ -100,9 +100,11 @@ trip_stops as (
         and stop_arrivals.stop_id = rt_stop_times.stop_id
         and stop_arrivals.stop_sequence = rt_stop_times.stop_sequence
 ),
--- pair each trip with the next one to reach the stop. ordering on the actual
--- arrival rather than the scheduled start means an overtaking vehicle is paired
--- the way it really ran. trip_key breaks ties so the pairing is deterministic
+-- pair each trip with the next one to leave the stop. ordering on the actual
+-- departure rather than the scheduled start means an overtaking vehicle is
+-- paired the way it really ran -- and it is the same column the gap is measured
+-- from, so a headway can never come out negative. trip_key breaks ties so the
+-- pairing is deterministic
 --
 -- partition on service_date to handle overnight changes
 headways as (
@@ -111,21 +113,21 @@ headways as (
         trip_key as first_trip_key,
         lead(trip_key) over (
             partition by service_date, shape_id, stop_sequence, stop_id
-            order by actual_arrival_pacific asc, trip_key asc
+            order by actual_departure_pacific asc, trip_key asc
         ) as second_trip_key,
         stop_sequence,
         stop_id,
         shape_id,
         actual_departure_pacific as first_actual_departure,
-        lead(actual_arrival_pacific) over (
+        lead(actual_departure_pacific) over (
             partition by service_date, shape_id, stop_sequence, stop_id
-            order by actual_arrival_pacific asc, trip_key asc
-        ) as second_actual_arrival,
+            order by actual_departure_pacific asc, trip_key asc
+        ) as second_actual_departure,
         scheduled_departure_sec as first_scheduled_departure_sec,
-        lead(scheduled_arrival_sec) over (
+        lead(scheduled_departure_sec) over (
             partition by service_date, shape_id, stop_sequence, stop_id
-            order by actual_arrival_pacific asc, trip_key asc
-        ) as second_scheduled_arrival_sec,
+            order by actual_departure_pacific asc, trip_key asc
+        ) as second_scheduled_departure_sec,
     from trip_stops
 )
 -- the last trip to call at a stop on a service date starts no headway
@@ -137,15 +139,15 @@ select
     stop_id,
     shape_id,
     first_actual_departure,
-    second_actual_arrival,
+    second_actual_departure,
     -- the actuals are DATETIME, already in the feed's local time
-    datetime_diff(second_actual_arrival, first_actual_departure, second)
+    datetime_diff(second_actual_departure, first_actual_departure, second)
         as rt_headway_seconds,
     first_scheduled_departure_sec,
-    second_scheduled_arrival_sec,
+    second_scheduled_departure_sec,
     -- both scheduled columns are seconds since midnight on the same service
     -- date, which the partition above guarantees, so a plain subtraction
-    second_scheduled_arrival_sec - first_scheduled_departure_sec
+    second_scheduled_departure_sec - first_scheduled_departure_sec
         as scheduled_headway_seconds,
     stop_geometry.pt_geom,
 from headways

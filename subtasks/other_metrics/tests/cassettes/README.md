@@ -1,6 +1,6 @@
 # Cassettes
 
-Four synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
+Five synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
 DuckDB database up over one of them and runs the loaders' SQL against it
 verbatim, so a cassette answers the query the loader actually issued.
 
@@ -52,11 +52,12 @@ end:
 | --- | --- |
 | travel time into stop 2 | 120 s |
 | travel time into stop 5 | 420 s |
-| headway on 15 minute service | 870 s |
+| headway on 15 minute service | 900 s |
 
-The headway is 870 rather than 900 because a rider's gap runs from one vehicle's
-departure to the next one's arrival, so it is one dwell short of the spacing.
-Keeping the dwell non-zero is what makes a departure/arrival mix-up visible.
+A headway is the gap between vehicles — one departure to the next — so the dwell
+drops out of it and 15 minute service publishes the full 900 s. The dwell is kept
+non-zero anyway: it is the only thing separating an arrival from a departure, so
+a metric reaching for the wrong one of the two shows up in the result.
 
 There is **no jitter**: every vehicle arrives exactly when the scenario says it
 does, so the expected metric values are known up front rather than measured off
@@ -67,7 +68,7 @@ the fixture.
 `dim_stop_arrivals` publishes the same even 15 minute grid from 06:00 in every
 cassette but one, on that cassette's own `trip_id`s — sharing the ids is what
 lets a realtime stop time find its scheduled counterpart. So the scheduled
-headway is 870 s everywhere, and a cassette that runs something else against it
+headway is 900 s everywhere, and a cassette that runs something else against it
 has a measurable excess wait.
 
 `two_service_dates` opts out and publishes each trip's own times instead: where
@@ -85,10 +86,10 @@ matched. Only `inconsistent_feed` reuses an id, but the rule is in
 
 | | |
 | --- | --- |
-| gaps per stop | 7, all 870 s |
+| gaps per stop | 7, all 900 s |
 | day parts | 4 in Early AM, 3 in AM Peak, at every stop |
 | travel time variability | 1.0 on both segments |
-| expected wait | 435 s, scheduled and realtime alike |
+| expected wait | 450 s, scheduled and realtime alike |
 | excess wait | 0 |
 
 ## variable_headway
@@ -105,13 +106,13 @@ At every stop:
 
 | day part | gaps | mean | variance | E[wait] | excess | % time over-long |
 | --- | --- | --- | --- | --- | --- | --- |
-| AM Peak | 6 × 570 s, 6 × 1170 s | 870 s | 98181.82 | 491.43 s | +56.43 s | 0.172414 |
-| Midday | 11 × 870 s | 870 s | 0 | 435.00 s | 0 | 0 |
+| AM Peak | 6 × 600 s, 6 × 1200 s | 900 s | 98181.82 | 504.55 s | +54.55 s | 0.166667 |
+| Midday | 11 × 900 s | 900 s | 0 | 450.00 s | 0 | 0 |
 
-The last column counts a rider's own wait, not the gap's length. In a 1170 s gap
-against a scheduled 870, only riders arriving in the first 300 seconds wait
-longer than the schedule promised. So each long gap contributes `1170 - 870`,
-giving `6 × 300 / 10440 = 0.172414`.
+The last column counts a rider's own wait, not the gap's length. In a 1200 s gap
+against a scheduled 900, only riders arriving in the first 300 seconds wait
+longer than the schedule promised. So each long gap contributes `1200 - 900`,
+giving `6 × 300 / 10800 = 1/6`.
 
 A trip takes 10 minutes to run the line, so both blocks sit clear of their day
 part's boundary at every stop: the table above holds identically at stop 1 and at
@@ -161,11 +162,11 @@ Each date runs its own trips, as a real feed would.
 still 6/17's service, and the schedule publishes them as hour 24, while the
 realtime side records the same trips as ordinary datetimes on 6/18:
 
-| trip departs | `arrival_sec` | `service_date` | `actual_arrival_pacific` |
+| trip departs | `departure_sec` | `service_date` | `actual_departure_pacific` |
 | --- | --- | --- | --- |
-| `23:45` | 85500 | 2026-06-17 | 2026-06-17 23:45:00 |
-| `24:00` | 86400 | 2026-06-17 | 2026-06-18 00:00:00 |
-| `04:00` | 14400 | 2026-06-18 | 2026-06-18 04:00:00 |
+| `23:45` | 85530 | 2026-06-17 | 2026-06-17 23:45:30 |
+| `24:00` | 86430 | 2026-06-17 | 2026-06-18 00:00:30 |
+| `04:00` | 14430 | 2026-06-18 | 2026-06-18 04:00:30 |
 
 **A trip's service date is what it is listed under, not what the clock says.**
 6/18's service does not start until 04:00, and its seconds are counted from
@@ -177,9 +178,9 @@ from the other has to say which midnight it means.
 
 | | |
 | --- | --- |
-| gaps per stop | 6 — 3 on each date, all 870 s |
+| gaps per stop | 6 — 3 on each date, all 900 s |
 | the overnight break | not reported as a headway at all |
-| the 23:45 → 24:00 pair | still 870 s: crossing midnight is not crossing a service date |
+| the 23:45 → 24:00 pair | still 900 s: crossing midnight is not crossing a service date |
 | day parts | 2 Evening, 1 Owl, 3 Early AM |
 | `n_service_dates` | 2 — the segment grain pools both dates |
 
@@ -215,20 +216,14 @@ the 20th percentile inside them, and the segment would report a ratio well
 under 1 for a run every real trip made in the same time. The trips themselves
 are still counted — `n_rt_trips` is 8 over 6 usable travel times.
 
-The wait metric has no such filter and cannot have one, because a short gap is
-not on its face a wrong one. So the bad arrival lands in the headways as a
-genuine 730 s gap (870 − 140), and stop 2 reports a wait *better* than the
-schedule promised:
+The wait metric never sees the contradiction. A headway runs departure to
+departure, and only the arrival was wrong, so every stop here reports the even
+service it ran — 900 s gaps, 450 s expected wait, no excess.
 
-| | mean | variance | E[wait] | excess |
-| --- | --- | --- | --- | --- |
-| stop 2 | 823.33 s | 5226.67 | 414.84 s | **−20.16 s** |
-| every other stop | 870 s | 0 | 435 s | 0 |
-
-Excess wait goes negative and nothing clamps it, which is the honest answer: a
-metric that floored it at zero would report the same figure here as for service
-that ran exactly to time. `percent_time_excess_wait` stays 0 — it counts long
-gaps, and there are none.
+That is the definition earning its keep. Measuring to the next arrival instead
+would have taken the bad stop time at face value and reported a 730 s gap where
+the two vehicles were a clean 900 s apart, giving stop 2 a *negative* excess
+wait: a feed error surfacing as service that beat its timetable.
 
 ## Regenerating
 

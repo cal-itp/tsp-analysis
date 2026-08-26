@@ -223,10 +223,10 @@ def get_schedule_rt_headways(
 ) -> pd.DataFrame:
     """Get the scheduled and realtime headway between consecutive trips.
 
-    Runs templates/schedule_rt_headways.sql. A headway is the gap in service at
-    a stop: the time from one vehicle pulling out to the next one pulling in.
-    The realtime side measures it between the actual departure and the actual
-    arrival; the scheduled side is the same gap between the times
+    Runs templates/schedule_rt_headways.sql. A headway is the gap between
+    vehicles at a stop: the time from one pulling out to the next one pulling
+    out. Both sides measure it departure to departure -- the realtime one
+    between the actual departures, the scheduled one between the departures
     dim_stop_arrivals published for those same two trips. Having both on one row
     is what makes an excess wait computable.
 
@@ -234,7 +234,7 @@ def get_schedule_rt_headways(
     pattern, not only the timepoints.
 
     Trips are paired within a service pattern and a service date, in the order
-    they actually reached the stop. The last trip to call at a stop on a date
+    they actually left the stop. The last trip to call at a stop on a date
     starts no headway, so n trips on a date give n - 1 rows per stop.
 
     Pairs never span two service dates. GTFS keeps a trip that runs past
@@ -261,9 +261,9 @@ def get_schedule_rt_headways(
         One row per consecutive pair of trips at a stop, keyed by
         ``first_trip_key``, ``second_trip_key`` and ``stop_sequence``, and
         carrying ``service_date``, ``stop_id``, ``shape_id``,
-        ``first_actual_departure``, ``second_actual_arrival``,
+        ``first_actual_departure``, ``second_actual_departure``,
         ``rt_headway_seconds``, ``first_scheduled_departure_sec``,
-        ``second_scheduled_arrival_sec``, ``scheduled_headway_seconds`` and
+        ``second_scheduled_departure_sec``, ``scheduled_headway_seconds`` and
         ``pt_geom``.
 
         ``pt_geom`` is the stop's point geometry as WKT, for mapping the metric.

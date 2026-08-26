@@ -88,14 +88,15 @@ TABLES = {
             ("_feed_valid_from", pa.timestamp("us", tz="UTC")),
         ]
     ),
-    # the published schedule, in seconds since midnight on the trip's service date
+    # the published schedule, in seconds since midnight on the trip's service
+    # date. Only the departure: a headway is measured departure to departure, and
+    # travel time comes off the realtime side, so nothing reads arrival_sec
     "dim_stop_arrivals": pa.schema(
         [
             ("feed_key", pa.string()),
             ("trip_id", pa.string()),
             ("stop_id", pa.string()),
             ("stop_sequence", pa.int64()),
-            ("arrival_sec", pa.int64()),
             ("departure_sec", pa.int64()),
             ("_feed_valid_from", pa.timestamp("us", tz="UTC")),
         ]
@@ -171,11 +172,11 @@ TIMEPOINT_SEQUENCES = (1, 2, 5)
 SEGMENT_SECONDS = 120
 DWELL_SECONDS = 30
 
-# the headway a rider sees is one vehicle's departure to the next one's arrival,
-# so it is the gap between trips less one dwell: 900 - 30 = 870 s for 15 minute
-# service. Keeping the dwell non-zero is what makes a departure/arrival mix-up
-# visible in the result
-HEADWAY_SECONDS = 15 * 60 - DWELL_SECONDS
+# a headway is the gap between vehicles, one departure to the next, so 15 minute
+# service publishes the full 900 s and the dwell drops out of it. The dwell is
+# kept non-zero anyway: it is what separates an arrival from a departure, so a
+# metric reaching for the wrong one of the two shows up in the result
+HEADWAY_SECONDS = 15 * 60
 
 
 def midnight(date: datetime.date) -> datetime.datetime:
@@ -335,7 +336,7 @@ def constant_headway() -> Scenario:
     """A trip every 15 minutes, running exactly to the published schedule.
 
     06:00 to 07:45 departures, so the gaps split across Early AM and AM Peak the
-    same way at every stop. Every gap is 870 s and so is every scheduled gap, so
+    same way at every stop. Every gap is 900 s and so is every scheduled gap, so
     the excess wait is zero and the expected wait is half a headway exactly.
     """
     starts = even_starts(midnight(DATE) + datetime.timedelta(hours=6), 15, 8)
@@ -346,7 +347,7 @@ def constant_headway() -> Scenario:
             for t, start in enumerate(starts)
         ],
         notes=[
-            "8 trips, 7 gaps per stop, all 870 s",
+            "8 trips, 7 gaps per stop, all 900 s",
             "4 gaps in Early AM and 3 in AM Peak, at every stop",
             "travel time 120 s into stop 2 and 420 s into stop 5, on every trip",
         ],
@@ -383,9 +384,9 @@ def variable_headway() -> Scenario:
         ],
         notes=[
             "24 trips, 23 gaps per stop",
-            "AM Peak: 6 gaps of 570 s and 6 of 1170 s, at every stop",
-            "Midday: 11 gaps of 870 s, at every stop",
-            "both day parts: mean 870 s, median 870 s, scheduled 870 s",
+            "AM Peak: 6 gaps of 600 s and 6 of 1200 s, at every stop",
+            "Midday: 11 gaps of 900 s, at every stop",
+            "both day parts: mean 900 s, median 900 s, scheduled 900 s",
         ],
     )
 
@@ -438,7 +439,7 @@ def two_service_dates() -> Scenario:
 
     Pairing within a service date is what keeps the two sides of a headway
     counted from the same midnight: the overnight break is not reported at all,
-    while 6/17's 23:45 and 24:00 trips still pair at the usual 870 s, because
+    while 6/17's 23:45 and 24:00 trips still pair at the usual 900 s, because
     crossing midnight is not the same thing as crossing a service date.
     """
     trips: list[Trip] = []
@@ -461,7 +462,7 @@ def two_service_dates() -> Scenario:
             "the overnight break between the dates is not reported as a headway",
             "6/17's gaps open 2 in Evening and 1 in Owl, 6/18's 3 in Early AM",
             "Owl holds a single gap, so its realtime expected wait is NaN",
-            "every gap 870 s, scheduled and realtime alike",
+            "every gap 900 s, scheduled and realtime alike",
         ],
     )
 
@@ -489,6 +490,12 @@ def inconsistent_feed() -> Scenario:
     trip itself is still real and still counted -- only the one travel time is
     discarded -- so the segment reports 8 trips over 6 usable travel times.
 
+    The wait metric never sees the contradiction at all. A headway runs departure
+    to departure, and only the arrival was wrong, so every stop here reports the
+    even service it ran. Measuring to the next arrival instead would have taken
+    the bad stop time at face value and reported a 730 s gap where the two
+    vehicles were a clean 900 s apart.
+
     Everything else runs to the even 15 minute schedule, so the disorder is the
     only thing moving.
     """
@@ -511,6 +518,7 @@ def inconsistent_feed() -> Scenario:
             "one trip per date reaches stop 2 before it left stop 1",
             "stop 2: 8 trips, 6 usable travel times of 120 s, p80/p20 still 1.0",
             "stop 5 is untouched, so its 420 s travel time holds on all 8",
+            "the wait is unmoved: a headway runs departure to departure",
         ],
     )
 
@@ -605,12 +613,11 @@ def build_tables(scenario: Scenario) -> dict[str, list[dict]]:
                 "trip_id": trip.trip_id,
                 "stop_id": stop_id,
                 "stop_sequence": sequence,
-                "arrival_sec": seconds_since_midnight(arrival, trip.service_date),
                 "departure_sec": seconds_since_midnight(departure, trip.service_date),
                 "_feed_valid_from": FEED_VALID_FROM,
             }
             for trip in build_schedule(scenario)
-            for sequence, stop_id, arrival, departure in trip.stop_times
+            for sequence, stop_id, _, departure in trip.stop_times
         ],
         # stops repeat once per service date, and the templates collapse them
         "fct_daily_scheduled_stops": [

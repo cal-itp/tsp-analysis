@@ -11,8 +11,6 @@ Where a rounded literal appears it carries its arithmetic in the docstring.
 
 from __future__ import annotations
 
-from typing import ClassVar
-
 import pandas as pd
 import pytest
 
@@ -36,20 +34,26 @@ EXPECTED_TIME_PERIODS = [
 ]
 PERIOD_NAMES = [name for name, _, _ in EXPECTED_TIME_PERIODS]
 
-# every cassette publishes the even 15 minute grid. a headway here is the gap
-# with no vehicle at the stop -- the next bus's arrival less this one's departure
-# -- so a 15 minute service with a 30 s dwell publishes 900 - 30 = 870, and half
-# of that is 7:15 rather than 7:30
-SCHEDULED_HEADWAY_SECONDS = 870.0
-SCHEDULED_EXPECTED_WAIT_SECONDS = SCHEDULED_HEADWAY_SECONDS / 2  # 435.0
+# every cassette publishes the even 15 minute grid. a headway is the gap between
+# vehicles -- one departure to the next -- so a 15 minute service publishes the
+# full 900 s whatever its dwell, and half of that is 7:30
+SCHEDULED_HEADWAY_SECONDS = 900.0
+SCHEDULED_EXPECTED_WAIT_SECONDS = SCHEDULED_HEADWAY_SECONDS / 2  # 450.0
 
-# the cassettes whose service ran exactly to that schedule, everywhere
-EVEN_SERVICE_CASSETTES = ["constant_headway", "two_service_dates"]
+# the cassettes whose service ran exactly to that schedule, everywhere.
+# inconsistent_feed is one of them only because a headway is measured departure
+# to departure: the arrival it contradicts itself about is not looked at, so the
+# bad stop time cannot reach this metric at all
+EVEN_SERVICE_CASSETTES = [
+    "constant_headway",
+    "two_service_dates",
+    "inconsistent_feed",
+]
 
-# variable_headway's two blocks, less the same 30 s dwell
-SHORT_HEADWAY_SECONDS = 570.0  # 10 minutes
-LONG_HEADWAY_SECONDS = 1170.0  # 20 minutes
-EVEN_HEADWAY_SECONDS = 870.0  # 15 minutes -- and exactly what the schedule says
+# variable_headway's two blocks
+SHORT_HEADWAY_SECONDS = 600.0  # 10 minutes
+LONG_HEADWAY_SECONDS = 1200.0  # 20 minutes
+EVEN_HEADWAY_SECONDS = 900.0  # 15 minutes -- and exactly what the schedule says
 
 # alternating 10 and 20 averages the same 15 minutes Midday runs evenly, so the
 # two blocks report an identical mean headway and differ only in how evenly it
@@ -200,13 +204,12 @@ class TestIdentities:
         ).all()
 
     @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_every_cassette_is_scheduled_on_the_same_even_grid(
-        self, expected_wait
-    ):  # TODO: departure_time - next_arrival_time is non-standard headway definition. it should be consistent departure to departure
-        """870 s of gap, so 435 s of expected wait.
+    def test_every_cassette_is_scheduled_on_the_same_even_grid(self, expected_wait):
+        """900 s between vehicles, so 450 s of expected wait.
 
-        7:15 rather than 7:30, because the 30 s dwell is time a bus is standing
-        at the stop rather than time a rider spends waiting for one.
+        The dwell does not enter into it. A headway is one departure to the
+        next, so a 15 minute service publishes the full 15 minutes however long
+        each bus stands at the stop.
         """
         assert set(expected_wait["median_scheduled_headway_seconds"]) == {
             SCHEDULED_HEADWAY_SECONDS
@@ -356,15 +359,15 @@ class TestServiceThatDidNot:
         headline number about the service is identical. The rider's wait is not,
         because they are twice as likely to turn up during a long gap:
 
-            n     = 12  (6 gaps of 570 s, 6 of 1170 s)
-            mean  = (6*570 + 6*1170) / 12 = 10440 / 12   = 870.0
-            var   = (6*(570-870)^2 + 6*(1170-870)^2) / 11
+            n     = 12  (6 gaps of 600 s, 6 of 1200 s)
+            mean  = (6*600 + 6*1200) / 12 = 10800 / 12   = 900.0
+            var   = (6*(600-900)^2 + 6*(1200-900)^2) / 11
                   = (6*90000 + 6*90000) / 11 = 1080000/11 = 98181.818182
             E[W]  = mean/2 + var/(2*mean)
-                  = 435 + 1080000 / (11 * 2 * 870)
-                  = 435 + 56.426332                       = 491.426332
+                  = 450 + 1080000 / (11 * 2 * 900)
+                  = 450 + 54.545455                       = 504.545455
 
-        So the excess wait is 56.426332 s against Midday's zero, on service whose
+        So the excess wait is 54.545455 s against Midday's zero, on service whose
         mean headway, median headway and published schedule all match it exactly.
         That is the whole point of the metric: the mean cannot see the difference
         and the rider can.
@@ -385,10 +388,10 @@ class TestServiceThatDidNot:
 
         assert rows["rt_headway_variance"].to_list() == at_every_stop(1080000 / 11)
         assert rows["rt_expected_wait_seconds"].to_list() == at_every_stop(
-            435 + 1080000 / (11 * 2 * 870)
+            450 + 1080000 / (11 * 2 * 900)
         )
         assert rows["excess_wait_seconds"].to_list() == pytest.approx(
-            [56.426332] * len(ALL_SEQUENCES), abs=1e-6
+            [54.545455] * len(ALL_SEQUENCES), abs=1e-6
         )
 
     @pytest.mark.parametrize("cassette_name", ["variable_headway"])
@@ -398,17 +401,17 @@ class TestServiceThatDidNot:
         A rider turns up at a random moment inside a gap and waits out whatever
         is left of it, so what they experience is not the gap's length but their
         own remaining wait. A short gap never leaves anyone waiting more than
-        870 s. A long one does -- but only for the riders arriving in its first
-        1170 - 870 = 300 seconds; someone turning up in the last 870 s of that
+        900 s. A long one does -- but only for the riders arriving in its first
+        1200 - 900 = 300 seconds; someone turning up in the last 900 s of that
         same gap still gets a bus inside the scheduled headway.
 
-            over-long = 6 * max(1170 - 870, 0) + 6 * max(570 - 870, 0)
+            over-long = 6 * max(1200 - 900, 0) + 6 * max(600 - 900, 0)
                       = 6 * 300 + 6 * 0                            =  1800
-            total     = 6 * 570 + 6 * 1170                         = 10440
-            share     = 1800 / 10440 = 5/29                        = 0.172414
+            total     = 6 * 600 + 6 * 1200                         = 10800
+            share     = 1800 / 10800 = 1/6                         = 0.166667
 
         Note what the clamp is doing. Without it the short gaps would score
-        6 * (570 - 870) = -1800 and cancel the long ones exactly, reporting 0 for
+        6 * (600 - 900) = -1800 and cancel the long ones exactly, reporting 0 for
         a day part that is anything but even. AM Peak is the case that catches
         that, and neither even cassette would.
         """
@@ -416,6 +419,6 @@ class TestServiceThatDidNot:
         shares = rows["percent_time_excess_wait"].to_list()
 
         assert len(rows) == len(ALL_SEQUENCES)
-        assert shares == pytest.approx([1800 / 10440] * len(ALL_SEQUENCES))
-        assert shares == pytest.approx([5 / 29] * len(ALL_SEQUENCES))
-        assert shares == pytest.approx([0.172414] * len(ALL_SEQUENCES), abs=1e-6)
+        assert shares == pytest.approx([1800 / 10800] * len(ALL_SEQUENCES))
+        assert shares == pytest.approx([1 / 6] * len(ALL_SEQUENCES))
+        assert shares == pytest.approx([0.166667] * len(ALL_SEQUENCES), abs=1e-6)
