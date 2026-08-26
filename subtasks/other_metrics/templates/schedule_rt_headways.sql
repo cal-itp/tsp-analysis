@@ -64,9 +64,22 @@ stop_arrivals as (
         _feed_valid_from in ('{{ FEED_VALID_FROMS | join("', '") }}')
         and feed_key in ('{{ FEED_KEYS | join("', '") }}')
 ),
+-- stop geometry, so the metric can be mapped. a stop repeats once per selected
+-- service date, so collapse it to one row -- the same shape schedule_rt_stop_times
+-- uses for its pt_geom
+stop_geometry as (
+    select
+        stop_id,
+        any_value(pt_geom) as pt_geom,
+    from mart_gtfs.fct_daily_scheduled_stops
+    where service_date in ('{{ TARGET_DATES | join("', '") }}')
+        and feed_key in ('{{ FEED_KEYS | join("', '") }}')
+    group by stop_id
+),
 -- one row per trip and stop, narrowed to the target service patterns
 trip_stops as (
     select
+        service_date,
         rt_stop_times.trip_key,
         rt_stop_times.stop_id,
         rt_stop_times.stop_sequence,
@@ -90,11 +103,14 @@ trip_stops as (
 -- pair each trip with the next one to reach the stop. ordering on the actual
 -- arrival rather than the scheduled start means an overtaking vehicle is paired
 -- the way it really ran. trip_key breaks ties so the pairing is deterministic
+--
+-- partition on service_date to handle overnight changes
 headways as (
     select
+        service_date,
         trip_key as first_trip_key,
         lead(trip_key) over (
-            partition by shape_id, stop_sequence, stop_id
+            partition by service_date, shape_id, stop_sequence, stop_id
             order by actual_arrival_pacific asc, trip_key asc
         ) as second_trip_key,
         stop_sequence,
@@ -102,18 +118,19 @@ headways as (
         shape_id,
         actual_departure_pacific as first_actual_departure,
         lead(actual_arrival_pacific) over (
-            partition by shape_id, stop_sequence, stop_id
+            partition by service_date, shape_id, stop_sequence, stop_id
             order by actual_arrival_pacific asc, trip_key asc
         ) as second_actual_arrival,
         scheduled_departure_sec as first_scheduled_departure_sec,
         lead(scheduled_arrival_sec) over (
-            partition by shape_id, stop_sequence, stop_id
+            partition by service_date, shape_id, stop_sequence, stop_id
             order by actual_arrival_pacific asc, trip_key asc
         ) as second_scheduled_arrival_sec,
     from trip_stops
 )
--- the last trip to call at a stop starts no headway
+-- the last trip to call at a stop on a service date starts no headway
 select
+    service_date,
     first_trip_key,
     second_trip_key,
     stop_sequence,
@@ -126,9 +143,15 @@ select
         as rt_headway_seconds,
     first_scheduled_departure_sec,
     second_scheduled_arrival_sec,
-    -- both scheduled columns are seconds since midnight, so a plain subtraction
+    -- both scheduled columns are seconds since midnight on the same service
+    -- date, which the partition above guarantees, so a plain subtraction
     second_scheduled_arrival_sec - first_scheduled_departure_sec
         as scheduled_headway_seconds,
+    stop_geometry.pt_geom,
 from headways
+-- left, so a stop missing from the daily stops table keeps its headway and
+-- reports a null geometry rather than dropping out of the metric entirely
+left join stop_geometry
+using(stop_id)
 where second_trip_key is not null
-order by shape_id, stop_sequence, first_actual_departure asc
+order by service_date, shape_id, stop_sequence, first_actual_departure asc

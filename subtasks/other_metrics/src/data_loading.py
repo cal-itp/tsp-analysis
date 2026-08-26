@@ -263,7 +263,11 @@ def get_schedule_rt_headways(
         carrying ``service_date``, ``stop_id``, ``shape_id``,
         ``first_actual_departure``, ``second_actual_arrival``,
         ``rt_headway_seconds``, ``first_scheduled_departure_sec``,
-        ``second_scheduled_arrival_sec`` and ``scheduled_headway_seconds``.
+        ``second_scheduled_arrival_sec``, ``scheduled_headway_seconds`` and
+        ``pt_geom``.
+
+        ``pt_geom`` is the stop's point geometry as WKT, for mapping the metric.
+        It is null where the stop has no row in fct_daily_scheduled_stops.
 
         ``service_date`` is the date both trips in the pair were listed under,
         which is not necessarily the calendar date either of them ran on.

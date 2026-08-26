@@ -17,6 +17,32 @@ TRIP_GRAIN = ("service_date", "shape_id", "feed_key", "trip_id")
 # service pattern
 SEGMENT_GRAIN = ("shape_id", "feed_key", "stop_sequence")
 
+# the day parts a wait time is reported over, as (name, first hour, last hour
+# exclusive) on the clock. contiguous and covering 00:00 to 24:00, so every hour
+# lands in exactly one of them
+TIME_PERIODS = (
+    ("Owl", 0, 4),
+    ("Early AM", 4, 7),
+    ("AM Peak", 7, 10),
+    ("Midday", 10, 15),
+    ("PM Peak", 15, 20),
+    ("Evening", 20, 24),
+)
+
+# in clock order, so the reported table sorts by the clock rather than the
+# alphabet -- "AM Peak" would otherwise lead and "Owl" would land mid-morning
+TIME_PERIOD_ORDER = [name for name, _, _ in TIME_PERIODS]
+
+# flattened for the lookup, since the periods are contiguous and cover 00:00 to
+# 24:00 -- every clock hour has exactly one entry here
+HOUR_TO_TIME_PERIOD = {
+    hour: name for name, start, end in TIME_PERIODS for hour in range(start, end)
+}
+
+# one metric value per stop and day part, on this service pattern. stop_id is
+# not in the grain: it is fixed by shape_id and stop_sequence, and rides along
+WAIT_GRAIN = ("shape_id", "stop_sequence", "time_period")
+
 
 def calculate_travel_time_variability(
     schedule_rt_stop_times: pd.DataFrame,
@@ -109,3 +135,149 @@ def calculate_travel_time_variability(
         ],
         axis=1,
     ).reset_index()
+
+
+def calculate_expected_wait(
+    schedule_rt_headways: pd.DataFrame,
+    *,
+    wait_grain: Sequence[str] = WAIT_GRAIN,
+) -> pd.DataFrame:
+    """Expected and excess wait per stop and day part.
+
+    This is the notebook's ``headway_summary`` with two additions: the scheduled
+    headway reported alongside the realtime one, and a time period in the grain.
+
+    Each headway is assigned to a day part by the clock hour of
+    ``first_actual_departure`` -- the hour the gap in service opens. That is the
+    wall clock, not the GTFS hour, so a trip published as 24:15 on one service
+    date is counted in Owl on the following morning.
+
+    Args:
+        schedule_rt_headways: one row per consecutive pair of trips at a stop,
+            as returned by templates/schedule_rt_headways.sql. Needs
+            ``shape_id``, ``stop_sequence``, ``stop_id``,
+            ``first_actual_departure``, ``rt_headway_seconds`` and
+            ``scheduled_headway_seconds``.
+        wait_grain: columns identifying one reported value, and the grain of the
+            returned frame.
+
+    Returns:
+        One row per stop and day part that saw at least one headway. Day parts
+        with no service are absent rather than present and empty.
+
+        Carries ``n_headways``, ``mean_rt_headway_seconds``,
+        ``median_rt_headway_seconds``, ``max_rt_headway_seconds``,
+        ``rt_headway_variance``, ``mean_scheduled_headway_seconds``,
+        ``median_scheduled_headway_seconds``,
+        ``scheduled_expected_wait_seconds``, ``rt_expected_wait_seconds``,
+        ``excess_wait_seconds`` and ``percent_time_excess_wait``.
+
+        ``scheduled_expected_wait_seconds`` is half the median scheduled
+        headway. ``rt_expected_wait_seconds`` is the notebook's variance
+        adjusted form, ``mean/2 * (1 + var/mean**2)``, so irregular service
+        costs the rider more than half the mean gap.
+        ``excess_wait_seconds`` is the realtime one less the scheduled one.
+
+        ``percent_time_excess_wait`` is how much of the day part would have left
+        a rider waiting longer than the schedule promised, as a proportion of 1.
+        A rider turns up at a random moment inside a gap and waits out what is
+        left of it, so what they experience is their own remaining wait rather
+        than the gap's length: in a gap of H seconds against a scheduled headway
+        of S, only those arriving in its first ``H - S`` seconds end up waiting
+        longer than S. Each gap therefore contributes ``max(H - S, 0)`` seconds,
+        over the total time spent waiting.
+
+        ``time_period`` is an ordered categorical over TIME_PERIOD_ORDER.
+
+        A day part holding a single headway has no sample variance, so its
+        realtime expected wait comes back NaN rather than half the one gap. That
+        is the notebook's behaviour, kept deliberately: one observation is not
+        enough to say anything about how evenly service ran.
+    """
+    wait_grain = list(wait_grain)
+
+    headways = schedule_rt_headways.copy()
+    # the hour the gap in service opens, by the wall clock. every hour has a
+    # period, so this only produces nulls if the column itself is null
+    headways["time_period"] = pd.Categorical(
+        headways["first_actual_departure"].dt.hour.map(HOUR_TO_TIME_PERIOD),
+        categories=TIME_PERIOD_ORDER,
+        ordered=True,
+    )
+
+    # stop_id is fixed by shape_id and stop_sequence, so grouping on it as well
+    # splits nothing further -- it just carries the column through without a
+    # second pass to merge it back on
+    group_keys = list(wait_grain)
+    if "stop_id" not in group_keys and "stop_sequence" in group_keys:
+        group_keys.insert(group_keys.index("stop_sequence") + 1, "stop_id")
+
+    # how much of each gap leaves a rider worse off than the schedule promised.
+    # a rider arriving in the last S seconds of an over-long gap still gets a
+    # bus inside the scheduled headway, so only the first H - S seconds count.
+    #
+    # the clamp is load bearing: without it a short gap would score a negative
+    # and cancel a long one out, reporting nothing wrong with service that
+    # alternates evenly either side of its schedule. a null scheduled headway
+    # leaves this null, so an unscheduled trip counts toward the time waited but
+    # never toward the time waited too long
+    headways["over_long_headway_seconds"] = (
+        headways["rt_headway_seconds"] - headways["scheduled_headway_seconds"]
+    ).clip(lower=0)
+
+    # observed, so a day part the stop saw no service in is absent rather than
+    # present with a zero count -- grouping on a categorical would otherwise
+    # invent a row for every period on every stop
+    summary = (
+        headways.groupby(group_keys, observed=True)
+        .agg(
+            n_headways=("rt_headway_seconds", "size"),
+            mean_rt_headway_seconds=("rt_headway_seconds", "mean"),
+            median_rt_headway_seconds=("rt_headway_seconds", "median"),
+            max_rt_headway_seconds=("rt_headway_seconds", "max"),
+            rt_headway_variance=("rt_headway_seconds", "var"),
+            mean_scheduled_headway_seconds=("scheduled_headway_seconds", "mean"),
+            median_scheduled_headway_seconds=("scheduled_headway_seconds", "median"),
+            total_headway_seconds=("rt_headway_seconds", "sum"),
+            over_long_headway_seconds=("over_long_headway_seconds", "sum"),
+        )
+        .reset_index()
+    )
+    # the headway columns arrive as integer seconds, so max comes back integral
+    # while the rest are already floats. report them all the same way
+    for column in ["median_rt_headway_seconds", "max_rt_headway_seconds"]:
+        summary[column] = summary[column].astype(float)
+
+    # the published schedule is even within a day part, so there is no variance
+    # term to add: a rider arriving at random waits half a headway
+    summary["scheduled_expected_wait_seconds"] = (
+        summary["median_scheduled_headway_seconds"] / 2
+    )
+    # what actually ran is not even, and the variance term is the penalty for
+    # that -- a rider is more likely to turn up during a long gap than a short
+    # one, so the average wait exceeds half the average headway
+    summary["rt_expected_wait_seconds"] = (
+        summary["mean_rt_headway_seconds"]
+        / 2
+        * (
+            1
+            + summary["rt_headway_variance"]
+            / summary["mean_rt_headway_seconds"] ** 2
+        )
+    )
+    summary["excess_wait_seconds"] = (
+        summary["rt_expected_wait_seconds"] - summary["scheduled_expected_wait_seconds"]
+    )
+
+    # weighted by seconds rather than counted by gap, because a rider turning up
+    # at random is likelier to land in a long gap than a short one
+    summary["percent_time_excess_wait"] = (
+        summary["over_long_headway_seconds"] / summary["total_headway_seconds"]
+    )
+    summary = summary.drop(
+        columns=["total_headway_seconds", "over_long_headway_seconds"]
+    )
+
+    # groupby already sorts by the keys, but say so rather than depend on it --
+    # time_period is ordered, so this is clock order and not alphabetical
+    return summary.sort_values(group_keys).reset_index(drop=True)
