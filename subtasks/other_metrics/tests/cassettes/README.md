@@ -1,6 +1,6 @@
 # Cassettes
 
-Five synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
+Seven synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
 DuckDB database up over one of them and runs the loaders' SQL against it
 verbatim, so a cassette answers the query the loader actually issued.
 
@@ -10,8 +10,8 @@ run goes from parquet straight to a reported table, and `src/data_loading.py` is
 private as far as the tests are concerned, so it can change freely as long as the
 metrics still come out the same.
 
-One file per metric: `../test_travel_time_variability.py` and
-`../test_expected_wait.py`.
+One file per metric: `../test_travel_time_variability.py`,
+`../test_expected_wait.py` and `../test_on_time_performance.py`.
 
 | Directory | What it pins down |
 | --- | --- |
@@ -20,6 +20,8 @@ One file per metric: `../test_travel_time_variability.py` and
 | `variable_travel_time/` | a p80/p20 travel time ratio of exactly 2.0 |
 | `two_service_dates/` | headways either side of a service date boundary |
 | `inconsistent_feed/` | a feed contradicting itself, and trip ids reused across dates |
+| `mixed_punctuality/` | one trip late all the way down the line, one early at a single stop |
+| `punctuality_thresholds/` | trips landing exactly on the on time thresholds, and a second past them |
 
 ## What is in a cassette
 

@@ -33,6 +33,8 @@ N_TRIPS = {
     "variable_travel_time": 9,
     "two_service_dates": 8,
     "inconsistent_feed": 8,
+    "mixed_punctuality": 10,
+    "punctuality_thresholds": 8,
 }
 
 # the cassettes covering more than one service date. the segment grain has no
@@ -41,11 +43,14 @@ MULTI_DATE_CASSETTES = ["two_service_dates", "inconsistent_feed"]
 
 # the cassettes where every trip runs the line in the same time. in
 # two_service_dates that holds across both of its dates, which the segment grain
-# pools together
+# pools together. punctuality_thresholds runs its trips early and late, but moves
+# each one's stop times together -- a late bus is late, not slow -- so its travel
+# times are untouched and it belongs here too
 CONSTANT_TRAVEL_TIME_CASSETTES = [
     "constant_headway",
     "variable_headway",
     "two_service_dates",
+    "punctuality_thresholds",
 ]
 
 # in variable_travel_time every third trip runs the whole line in half the time

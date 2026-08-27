@@ -73,6 +73,10 @@ GAPS_PER_STOP = {
     "variable_travel_time": {"Early AM": 4, "AM Peak": 4},
     "two_service_dates": {"Owl": 1, "Early AM": 3, "Evening": 2},
     "inconsistent_feed": {"Early AM": 6},  # 3 on each of its two dates
+    # both punctuality cassettes run early enough in the morning that every gap
+    # opens inside Early AM, however late their late trips are
+    "mixed_punctuality": {"Early AM": 9},
+    "punctuality_thresholds": {"Early AM": 7},
 }
 
 # variable_travel_time is a travel time fixture: its fast trips catch the ones in

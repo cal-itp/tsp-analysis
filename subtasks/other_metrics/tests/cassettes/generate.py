@@ -26,6 +26,10 @@ the fixture.
                             GTFS hours past 24
     inconsistent_feed/      a feed contradicting itself about the order of two
                             stops, and one trip id running on two dates
+    mixed_punctuality/      ten trips against their own timetable: one late all
+                            the way down the line, one early at one stop only
+    punctuality_thresholds/ trips landing exactly on the on time thresholds, and
+                            one second past them
 
 Run with the project venv:
 
@@ -89,14 +93,16 @@ TABLES = {
         ]
     ),
     # the published schedule, in seconds since midnight on the trip's service
-    # date. Only the departure: a headway is measured departure to departure, and
-    # travel time comes off the realtime side, so nothing reads arrival_sec
+    # date. The headway metric reads only the departure -- a headway is measured
+    # departure to departure -- while on time performance compares the published
+    # arrival against the one the vehicle actually made
     "dim_stop_arrivals": pa.schema(
         [
             ("feed_key", pa.string()),
             ("trip_id", pa.string()),
             ("stop_id", pa.string()),
             ("stop_sequence", pa.int64()),
+            ("arrival_sec", pa.int64()),
             ("departure_sec", pa.int64()),
             ("_feed_valid_from", pa.timestamp("us", tz="UTC")),
         ]
@@ -227,9 +233,10 @@ class Scenario:
     trips: list[Trip]
     # dim_stop_arrivals normally publishes the even 15 minute grid in
     # build_schedule, which is what makes an excess wait measurable where the
-    # service departs from it. A scenario whose point is where the scheduled
-    # seconds are counted from publishes each trip's own times instead
-    scheduled_from_trips: bool = False
+    # service departs from it. A scenario that needs its schedule to be something
+    # else -- its own trips, or the timetable those trips then ran late against --
+    # hands the published trips over here instead
+    scheduled_trips: list[Trip] | None = None
     notes: list[str] = field(default_factory=list)
 
 
@@ -277,6 +284,47 @@ def disorder_arrival(trip: Trip, sequence: int, seconds_early: int) -> Trip:
     )
     return Trip(
         trip_id=trip.trip_id, service_date=trip.service_date, stop_times=stop_times
+    )
+
+
+def shift_trip(trip: Trip, seconds: int) -> Trip:
+    """Run a whole trip late, stop for stop. Negative seconds run it early.
+
+    Every stop time moves by the same amount, so the trip is late everywhere and
+    its travel time between any two stops is untouched -- a late bus is late, not
+    slow. That is what separates this from ``build_trip(factor=...)``, which
+    changes how long the run takes and leaves the start where it was.
+    """
+    offset = datetime.timedelta(seconds=seconds)
+    return Trip(
+        trip_id=trip.trip_id,
+        service_date=trip.service_date,
+        stop_times=[
+            (sequence, stop_id, arrival + offset, departure + offset)
+            for sequence, stop_id, arrival, departure in trip.stop_times
+        ],
+    )
+
+
+def shift_arrival(trip: Trip, sequence: int, seconds: int) -> Trip:
+    """Move one arrival, leaving its departure and every other stop alone.
+
+    A bus reaching one stop early and leaving it on time, rather than running the
+    whole line early. Only the one stop's punctuality moves.
+    """
+    offset = datetime.timedelta(seconds=seconds)
+    return Trip(
+        trip_id=trip.trip_id,
+        service_date=trip.service_date,
+        stop_times=[
+            (
+                stop_sequence,
+                stop_id,
+                arrival + offset if stop_sequence == sequence else arrival,
+                departure,
+            )
+            for stop_sequence, stop_id, arrival, departure in trip.stop_times
+        ],
     )
 
 
@@ -456,7 +504,7 @@ def two_service_dates() -> Scenario:
         trips=trips,
         # the point of this scenario is where the published seconds are counted
         # from, so it publishes its own times rather than the shared grid
-        scheduled_from_trips=True,
+        scheduled_trips=trips,
         notes=[
             "8 trips, 4 on each date, 3 gaps per stop per date",
             "the overnight break between the dates is not reported as a headway",
@@ -523,12 +571,133 @@ def inconsistent_feed() -> Scenario:
     )
 
 
+# on time performance's two thresholds: a vehicle is on time unless it beats its
+# published arrival by more than a minute or misses it by more than five. Stated
+# here because the two punctuality scenarios are built to land either side of
+# them, not because the generator applies them
+EARLY_THRESHOLD_SECONDS = 60
+LATE_THRESHOLD_SECONDS = 5 * 60
+
+# mixed_punctuality: which of the ten trips misbehave, and how
+LATE_TRIP = 4
+LATE_SECONDS = 6 * 60
+EARLY_ARRIVAL_TRIP = 7
+EARLY_ARRIVAL_SECONDS = 2 * 60
+LAST_TIMEPOINT = TIMEPOINT_SEQUENCES[-1]
+
+# punctuality_thresholds: trip index -> how late it runs, in seconds. Two land
+# exactly on a threshold and two land one second past it
+BOUNDARY_DEVIATIONS = {
+    1: -EARLY_THRESHOLD_SECONDS,
+    2: -EARLY_THRESHOLD_SECONDS - 1,
+    3: LATE_THRESHOLD_SECONDS,
+    4: LATE_THRESHOLD_SECONDS + 1,
+}
+
+
+def mixed_punctuality() -> Scenario:
+    """Ten trips against their own timetable: one late throughout, one early once.
+
+    The schedule here is the timetable the trips were built from rather than the
+    shared 06:00 grid, so a trip that ran to it deviates by exactly zero and the
+    two that did not deviate by exactly what they were moved.
+
+    Eight trips run to time. One runs six minutes late at every stop -- late
+    enough to miss the five minute threshold, and late everywhere, so every
+    timepoint reports it. One runs to time all the way down the line and then
+    reaches the *last* timepoint two minutes early, its departure left where it
+    was: early enough to beat the one minute threshold, at one stop only.
+
+    That asymmetry is the point. A metric reported per stop must show the early
+    trip at the last timepoint and nowhere else, so the first two timepoints and
+    the last one cannot report the same numbers -- and the pooled table cannot be
+    the average of the per-stop ones.
+
+    Trips run every 15 minutes from 04:15, so all thirty timepoint arrivals fall
+    inside Early AM and the day part is never what splits them.
+    """
+    starts = even_starts(
+        midnight(DATE) + datetime.timedelta(hours=4, minutes=15), 15, 10
+    )
+    scheduled = [
+        build_trip(f"mixed-{t:02d}", DATE, start) for t, start in enumerate(starts)
+    ]
+
+    ran = list(scheduled)
+    ran[LATE_TRIP] = shift_trip(ran[LATE_TRIP], LATE_SECONDS)
+    ran[EARLY_ARRIVAL_TRIP] = shift_arrival(
+        ran[EARLY_ARRIVAL_TRIP], LAST_TIMEPOINT, -EARLY_ARRIVAL_SECONDS
+    )
+
+    return Scenario(
+        name="mixed_punctuality",
+        trips=ran,
+        scheduled_trips=scheduled,
+        notes=[
+            "10 trips every 15 minutes from 04:15, all of them Early AM",
+            "8 run exactly to time, at every timepoint",
+            "1 runs 360 s late at every timepoint",
+            "1 reaches the last timepoint 120 s early, and is on time before it",
+            "stops 1 and 2: 9 deviations of 0 s and one of +360 s",
+            "stop 5: 8 of 0 s, one of -120 s and one of +360 s",
+        ],
+    )
+
+
+def punctuality_thresholds() -> Scenario:
+    """Trips landing exactly on the on time thresholds, and one second past them.
+
+    On time performance turns a continuous deviation into three buckets, so the
+    only interesting question about the boundary is which side of it the boundary
+    itself falls on. "More than a minute early" and "more than five minutes late"
+    are both strict, so a trip exactly 60 s early and one exactly 300 s late are
+    **on time**, and the trips a second beyond them are not.
+
+    Eight trips: one exactly on each threshold, one a second past each, and four
+    dead on time. Every stop time of a trip moves together, so each trip carries
+    one classification the whole way down the line and every timepoint reports
+    the same split -- what changes between the two punctuality scenarios is that
+    this one puts the interest in the thresholds and none of it in the stops.
+
+    The deviations are spread far enough apart to make both reported percentiles
+    land inside an interpolation rather than on a repeated zero, which
+    mixed_punctuality's mostly-on-time sample cannot do.
+
+    Trips run every 15 minutes from 04:30, so all of them fall inside Early AM.
+    """
+    starts = even_starts(
+        midnight(DATE) + datetime.timedelta(hours=4, minutes=30), 15, 8
+    )
+    scheduled = [
+        build_trip(f"boundary-{t:02d}", DATE, start) for t, start in enumerate(starts)
+    ]
+    ran = [
+        shift_trip(trip, BOUNDARY_DEVIATIONS.get(t, 0))
+        for t, trip in enumerate(scheduled)
+    ]
+
+    return Scenario(
+        name="punctuality_thresholds",
+        trips=ran,
+        scheduled_trips=scheduled,
+        notes=[
+            "8 trips every 15 minutes from 04:30, all of them Early AM",
+            "deviations at every timepoint: 0, -60, -61, +300, +301, 0, 0, 0",
+            "-60 and +300 sit exactly on the thresholds, so both are on time",
+            "-61 is the only early trip and +301 the only late one",
+            "a whole trip moves together, so travel times are untouched",
+        ],
+    )
+
+
 SCENARIOS = [
     constant_headway,
     variable_headway,
     variable_travel_time,
     two_service_dates,
     inconsistent_feed,
+    mixed_punctuality,
+    punctuality_thresholds,
 ]
 
 
@@ -545,11 +714,16 @@ def build_schedule(scenario: Scenario) -> list[Trip]:
     constant_headway runs, so there schedule and realtime agree trip for trip;
     where a scenario runs something else against the same even schedule, the
     difference between the two is what makes an excess wait measurable at all.
+
+    A scenario carrying its own ``scheduled_trips`` publishes those instead --
+    either because where the seconds are counted from is its whole point, or
+    because it needs a timetable its trips can then be measured late against.
     """
+    if scenario.scheduled_trips is not None:
+        return distinct_trips(scenario.scheduled_trips)
+
     # one published trip per trip_id, however many dates it ran on
     published = distinct_trips(scenario.trips)
-    if scenario.scheduled_from_trips:
-        return published
 
     # the same trip_ids, so a realtime stop time still finds its scheduled
     # counterpart -- that join is on trip_id, stop_id and stop_sequence
@@ -613,11 +787,12 @@ def build_tables(scenario: Scenario) -> dict[str, list[dict]]:
                 "trip_id": trip.trip_id,
                 "stop_id": stop_id,
                 "stop_sequence": sequence,
+                "arrival_sec": seconds_since_midnight(arrival, trip.service_date),
                 "departure_sec": seconds_since_midnight(departure, trip.service_date),
                 "_feed_valid_from": FEED_VALID_FROM,
             }
             for trip in build_schedule(scenario)
-            for sequence, stop_id, _, departure in trip.stop_times
+            for sequence, stop_id, arrival, departure in trip.stop_times
         ],
         # stops repeat once per service date, and the templates collapse them
         "fct_daily_scheduled_stops": [
