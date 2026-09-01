@@ -10,10 +10,12 @@ places:
 * The deviation is the actual arrival at a timepoint less the arrival the
   schedule published for that trip at that stop, in seconds, signed so that late
   is positive.
-* A vehicle is **early** if it beats its published arrival by more than
-  ``early_seconds``, **late** if it misses it by more than ``late_seconds``, and
-  **not on time** if it is either. All three are proportions of the timepoint
-  arrivals in the group, and the two thresholds are strict.
+* A vehicle is **early** if it beats its published arrival by ``early_seconds``
+  or more, **late** if it misses it by ``late_seconds`` or more, and **not on
+  time** if it is either. All three are proportions of the timepoint arrivals in
+  the group, and the two thresholds are inclusive.
+* ``schedule_adherence`` is one less ``proportion_not_on_time``: the share of
+  arrivals that made their published time.
 * The day part comes from the **scheduled** arrival, not the actual one, so a
   trip running late is still reported in the day part it was promised in.
 
@@ -71,6 +73,7 @@ MIXED_BEFORE_LAST = {
     "proportion_early": 0.0,
     "proportion_late": MIXED_LATE_TRIPS / MIXED_TRIPS,
     "proportion_not_on_time": MIXED_LATE_TRIPS / MIXED_TRIPS,
+    "schedule_adherence": 1 - MIXED_LATE_TRIPS / MIXED_TRIPS,
 }
 
 # the last timepoint also sees the three early trips' -120 s, which pushes the
@@ -85,6 +88,7 @@ MIXED_AT_LAST = {
     "proportion_early": MIXED_EARLY_TRIPS / MIXED_TRIPS,
     "proportion_late": MIXED_LATE_TRIPS / MIXED_TRIPS,
     "proportion_not_on_time": (MIXED_EARLY_TRIPS + MIXED_LATE_TRIPS) / MIXED_TRIPS,
+    "schedule_adherence": 1 - (MIXED_EARLY_TRIPS + MIXED_LATE_TRIPS) / MIXED_TRIPS,
 }
 
 # pooled over the three timepoints: 18 zeros, three 120s and nine 360s. p50 lands
@@ -102,6 +106,9 @@ MIXED_POOLED = {
     "proportion_not_on_time": (
         MIXED_EARLY_TRIPS + MIXED_LATE_TRIPS * len(TIMEPOINT_SEQUENCES)
     )
+    / MIXED_ARRIVALS,
+    "schedule_adherence": 1
+    - (MIXED_EARLY_TRIPS + MIXED_LATE_TRIPS * len(TIMEPOINT_SEQUENCES))
     / MIXED_ARRIVALS,
 }
 
@@ -124,6 +131,7 @@ THRESHOLD_BY_STOP = {
     "proportion_early": 2 / THRESHOLD_TRIPS,
     "proportion_late": 2 / THRESHOLD_TRIPS,
     "proportion_not_on_time": 4 / THRESHOLD_TRIPS,
+    "schedule_adherence": 1 - 4 / THRESHOLD_TRIPS,
 }
 
 # pooled, the same eight values appear three times over: 12 zeros, three 60s,
@@ -137,6 +145,7 @@ THRESHOLD_POOLED = {
     "proportion_early": 2 / THRESHOLD_TRIPS,
     "proportion_late": 2 / THRESHOLD_TRIPS,
     "proportion_not_on_time": 4 / THRESHOLD_TRIPS,
+    "schedule_adherence": 1 - 4 / THRESHOLD_TRIPS,
 }
 
 # ---------------------------------------------------------------------------
@@ -164,6 +173,7 @@ STOP_COLUMNS = [
     "proportion_early",
     "proportion_late",
     "proportion_not_on_time",
+    "schedule_adherence",
 ]
 
 PERIOD_COLUMNS = [
@@ -175,6 +185,7 @@ PERIOD_COLUMNS = [
     "proportion_early",
     "proportion_late",
     "proportion_not_on_time",
+    "schedule_adherence",
 ]
 
 PROPORTION_COLUMNS = [
@@ -309,7 +320,7 @@ class TestIdentities:
     @pytest.mark.parametrize("cassette_name", CASSETTES)
     def test_proportions_are_proportions(self, by_stop, by_period):
         for frame in [by_stop, by_period]:
-            for column in PROPORTION_COLUMNS:
+            for column in [*PROPORTION_COLUMNS, "schedule_adherence"]:
                 assert frame[column].between(0.0, 1.0).all(), column
                 assert frame[column].notna().all(), column
 
@@ -324,6 +335,21 @@ class TestIdentities:
             pd.testing.assert_series_equal(
                 frame["proportion_not_on_time"],
                 frame["proportion_early"] + frame["proportion_late"],
+                check_names=False,
+            )
+
+    @pytest.mark.parametrize("cassette_name", CASSETTES)
+    def test_adherence_is_the_complement_of_not_on_time(self, by_stop, by_period):
+        """The two columns are one number reported from both ends.
+
+        Nothing is measured twice here -- schedule adherence exists so a table
+        can lead with the share of service that made its published time -- so the
+        test that earns its place is the one saying the pair always adds to one.
+        """
+        for frame in [by_stop, by_period]:
+            pd.testing.assert_series_equal(
+                frame["schedule_adherence"],
+                1 - frame["proportion_not_on_time"],
                 check_names=False,
             )
 
@@ -358,6 +384,7 @@ class TestServiceRunToSchedule:
             assert set(frame["p80_absolute_deviation_seconds"]) == {0.0}
             for column in PROPORTION_COLUMNS:
                 assert set(frame[column]) == {0.0}, column
+            assert set(frame["schedule_adherence"]) == {1.0}
 
     @pytest.mark.parametrize("cassette_name", ["two_service_dates"])
     def test_a_trip_published_past_midnight_is_still_on_time(self, by_stop, by_period):

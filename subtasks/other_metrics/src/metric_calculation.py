@@ -334,6 +334,11 @@ def _summarise_punctuality(
     for column in ["is_early", "is_late", "is_not_on_time"]:
         summary[column.replace("is_", "proportion_")] = grouped[column].mean()
 
+    # the headline number, reported alongside its complement so a table can lead
+    # with the share of service that made its published time rather than the
+    # share that missed it
+    summary["schedule_adherence"] = 1 - summary["proportion_not_on_time"]
+
     return summary.reset_index().sort_values(group_keys).reset_index(drop=True)
 
 
@@ -384,9 +389,11 @@ def calculate_on_time_performance(
         An :class:`OnTimePerformance` pair. Both frames carry
         ``n_timepoint_arrivals``, ``p50_absolute_deviation_seconds``,
         ``p80_absolute_deviation_seconds``, ``proportion_early``,
-        ``proportion_late`` and ``proportion_not_on_time``; ``by_stop`` also
-        carries ``stop_sequence`` and ``stop_id``. The percentile column names
-        follow the percentiles asked for.
+        ``proportion_late``, ``proportion_not_on_time`` and
+        ``schedule_adherence``, which is one less that last one -- the share of
+        arrivals that made their published time; ``by_stop`` also carries
+        ``stop_sequence`` and ``stop_id``. The percentile column names follow the
+        percentiles asked for.
 
         Every proportion is of the timepoint arrivals in the group, not of the
         trips. A trip running late at three timepoints is three late arrivals,
