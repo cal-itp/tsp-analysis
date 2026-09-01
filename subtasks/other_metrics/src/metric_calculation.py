@@ -14,10 +14,6 @@ import pandas as pd
 # across them.
 TRIP_GRAIN = ("service_date", "shape_id", "feed_key", "trip_id")
 
-# one metric value per segment: the travel time into this stop_sequence, on this
-# service pattern
-SEGMENT_GRAIN = ("shape_id", "feed_key", "stop_sequence")
-
 # the day parts a wait time is reported over, as (name, first hour, last hour
 # exclusive) on the clock. contiguous and covering 00:00 to 24:00, so every hour
 # lands in exactly one of them
@@ -39,6 +35,10 @@ TIME_PERIOD_ORDER = [name for name, _, _ in TIME_PERIODS]
 HOUR_TO_TIME_PERIOD = {
     hour: name for name, start, end in TIME_PERIODS for hour in range(start, end)
 }
+
+# one metric value per segment and day part: the travel time into this
+# stop_sequence, on this service pattern, in this part of the day
+SEGMENT_GRAIN = ("shape_id", "feed_key", "stop_sequence", "time_period")
 
 # one metric value per stop and day part, on this service pattern. stop_id is
 # not in the grain: it is fixed by shape_id and stop_sequence, and rides along
@@ -69,13 +69,19 @@ def calculate_travel_time_variability(
     A segment is the run from one timepoint to the next, so its travel time is
     the actual arrival at a stop minus the actual departure from the stop before
     it on the same trip. Trips from every selected service date are pooled into a
-    single sample per segment.
+    single sample per segment and day part.
+
+    Each run is assigned to a day part by the clock hour of the actual arrival
+    that ends it. Realtime throughout, unlike on time performance's scheduled
+    hour: this metric reads no schedule at all, so a trip the schedule does not
+    cover is placed on the clock and measured like any other. A run that starts
+    in one day part and ends in the next is reported in the one it ended in.
 
     Args:
         schedule_rt_stop_times: one row per trip and timepoint, as returned by
             templates/schedule_rt_stop_times.sql. Needs the columns in
-            ``trip_grain`` and ``segment_grain`` plus ``actual_arrival_pacific``
-            and ``actual_departure_pacific``.
+            ``trip_grain`` and ``segment_grain`` bar ``time_period``, plus
+            ``actual_arrival_pacific`` and ``actual_departure_pacific``.
         upper_percentile: numerator of the ratio.
         lower_percentile: denominator of the ratio.
         trip_grain: columns identifying one vehicle trip.
@@ -83,12 +89,25 @@ def calculate_travel_time_variability(
             returned frame.
 
     Returns:
-        One row per segment, with columns ``travel_time_variability``,
-        ``p80_travel_time_seconds``, ``p20_travel_time_seconds``,
-        ``n_rt_trips`` and ``n_service_dates``.
+        One row per segment and day part that saw service, with columns
+        ``travel_time_variability``, ``p80_travel_time_seconds``,
+        ``p20_travel_time_seconds``, ``n_rt_trips`` and ``n_service_dates``. Day
+        parts with no service are absent rather than present and empty.
+
+        ``time_period`` is an ordered categorical over TIME_PERIOD_ORDER.
 
         The first timepoint on a pattern has no preceding stop, so its travel
-        time is null and its ratio is NaN.
+        time is null and its ratio is NaN. It is still reported, and still
+        counts its trips, because the day part comes from its own arrival.
+
+        ``n_service_dates`` counts the dates that fed the segment *in that day
+        part*, so a window whose dates each contribute one day part reports 1
+        everywhere -- the day part is a clock hour, while the service date is
+        what a trip is listed under.
+
+        A stop time with no realtime arrival has no day part to fall in and is
+        dropped. It carries no travel time either way, so this only moves
+        ``n_rt_trips``.
     """
     trip_grain = list(trip_grain)
     segment_grain = list(segment_grain)
@@ -118,7 +137,19 @@ def calculate_travel_time_variability(
         "time_difference_cleaned"
     ].dt.seconds
 
-    by_segment = stop_times.groupby(segment_grain)
+    # the hour the vehicle actually reached the stop, by the wall clock. every
+    # hour has a period, so this only produces nulls if the arrival itself is
+    # null -- and those rows are dropped by the grouping below
+    stop_times["time_period"] = pd.Categorical(
+        stop_times["actual_arrival_pacific"].dt.hour.map(HOUR_TO_TIME_PERIOD),
+        categories=TIME_PERIOD_ORDER,
+        ordered=True,
+    )
+
+    # observed, so a day part the segment saw no service in is absent rather than
+    # present with a zero count -- grouping on a categorical would otherwise
+    # invent a row for every period on every segment
+    by_segment = stop_times.groupby(segment_grain, observed=True)
     travel_time = by_segment["time_difference_seconds"]
 
     p_upper = travel_time.quantile(upper_percentile)
@@ -137,7 +168,7 @@ def calculate_travel_time_variability(
     n_dates_per_timepoint = by_segment["service_date"].nunique()
     n_dates_per_timepoint.name = "n_service_dates"
 
-    return pd.concat(
+    summary = pd.concat(
         [
             variability,
             p_upper,
@@ -147,6 +178,10 @@ def calculate_travel_time_variability(
         ],
         axis=1,
     ).reset_index()
+
+    # time_period is ordered, so this runs down the line and then round the clock
+    # rather than the alphabet
+    return summary.sort_values(segment_grain).reset_index(drop=True)
 
 
 def calculate_expected_wait(
