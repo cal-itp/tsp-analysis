@@ -40,8 +40,8 @@ NON_TIMEPOINT_SEQUENCES = [3, 4]
 STOP_IDS = {1: "stop1", 2: "stop2", 5: "stop5"}
 
 # the thresholds, stated here independently of the implementation so moving one
-# has to be done in both places. Both are strict: a vehicle exactly this early or
-# exactly this late is on time
+# has to be done in both places. Both are inclusive: a vehicle exactly this early
+# or exactly this late is not on time
 EARLY_THRESHOLD_SECONDS = 60
 LATE_THRESHOLD_SECONDS = 300
 
@@ -120,9 +120,10 @@ THRESHOLD_BY_STOP = {
     "n_timepoint_arrivals": THRESHOLD_TRIPS,
     "p50_absolute_deviation_seconds": (0 + 60) / 2,
     "p80_absolute_deviation_seconds": 61 + 0.6 * (300 - 61),
-    "proportion_early": 1 / THRESHOLD_TRIPS,
-    "proportion_late": 1 / THRESHOLD_TRIPS,
-    "proportion_not_on_time": 2 / THRESHOLD_TRIPS,
+    # the thresholds are inclusive, so both boundary trips count on each side
+    "proportion_early": 2 / THRESHOLD_TRIPS,
+    "proportion_late": 2 / THRESHOLD_TRIPS,
+    "proportion_not_on_time": 4 / THRESHOLD_TRIPS,
 }
 
 # pooled, the same eight values appear three times over: 12 zeros, three 60s,
@@ -133,9 +134,9 @@ THRESHOLD_POOLED = {
     "n_timepoint_arrivals": THRESHOLD_ARRIVALS,
     "p50_absolute_deviation_seconds": (0 + 60) / 2,
     "p80_absolute_deviation_seconds": 300.0,
-    "proportion_early": 1 / THRESHOLD_TRIPS,
-    "proportion_late": 1 / THRESHOLD_TRIPS,
-    "proportion_not_on_time": 2 / THRESHOLD_TRIPS,
+    "proportion_early": 2 / THRESHOLD_TRIPS,
+    "proportion_late": 2 / THRESHOLD_TRIPS,
+    "proportion_not_on_time": 4 / THRESHOLD_TRIPS,
 }
 
 # ---------------------------------------------------------------------------
@@ -464,13 +465,13 @@ class TestTheThresholds:
     Eight trips deviating by 0, -60, -61, +300, +301, 0, 0, 0 seconds, the same
     at every timepoint. Two land exactly on a threshold and two land a second
     past one, so this is the cassette that says whether the comparisons are
-    strict.
+    inclusive.
     """
 
     @pytest.mark.parametrize("cassette_name", ["punctuality_thresholds"])
     @pytest.mark.parametrize("sequence", TIMEPOINT_SEQUENCES)
     def test_every_timepoint_reports_the_same_split(self, by_stop, sequence):
-        """One early, one late, and a p50 and p80 that both interpolate.
+        """Two early, two late, and a p50 and p80 that both interpolate.
 
         A whole trip moves together here, so its classification is the same all
         the way down the line and all three stops report identically. The
@@ -485,23 +486,23 @@ class TestTheThresholds:
         assert_reports(one_row(by_stop, stop_sequence=sequence), THRESHOLD_BY_STOP)
 
     @pytest.mark.parametrize("cassette_name", ["punctuality_thresholds"])
-    def test_exactly_on_a_threshold_is_on_time(self, by_stop):
-        """Both comparisons are strict, so the boundary trips are not counted.
+    def test_exactly_on_a_threshold_is_not_on_time(self, by_stop):
+        """Both comparisons are inclusive, so the boundary trips are counted.
 
         Four of the eight trips deviate: 60 s early, 61 s early, 300 s late and
-        301 s late. Only two are reported. "More than a minute early" excludes
-        the trip exactly a minute early, and "more than five minutes late"
-        excludes the one exactly five minutes late -- so a quarter of the service
-        misses its published time and only an eighth of it is early or late.
+        301 s late. All four are reported. "A minute early or more" takes in the
+        trip exactly a minute early, and "five minutes late or more" takes in the
+        one exactly five minutes late -- so half the service misses its published
+        time and a quarter of it is early or late.
 
-        This is the whole of what the cassette exists to pin. A ``<=`` in place
-        of a ``<`` doubles both proportions and nothing else in the suite notices.
+        This is the whole of what the cassette exists to pin. A ``<`` in place of
+        a ``<=`` halves both proportions and nothing else in the suite notices.
         """
         row = one_row(by_stop, stop_sequence=LAST_TIMEPOINT)
 
-        assert row["proportion_early"] == pytest.approx(1 / THRESHOLD_TRIPS)
-        assert row["proportion_late"] == pytest.approx(1 / THRESHOLD_TRIPS)
-        assert row["proportion_not_on_time"] == pytest.approx(2 / THRESHOLD_TRIPS)
+        assert row["proportion_early"] == pytest.approx(2 / THRESHOLD_TRIPS)
+        assert row["proportion_late"] == pytest.approx(2 / THRESHOLD_TRIPS)
+        assert row["proportion_not_on_time"] == pytest.approx(4 / THRESHOLD_TRIPS)
 
     @pytest.mark.parametrize("cassette_name", ["punctuality_thresholds"])
     def test_the_pooled_percentile_is_not_the_average_of_the_stops(self, by_period):
@@ -605,23 +606,24 @@ class TestThresholdArguments:
             MIXED_LATE_TRIPS / MIXED_TRIPS
         }
 
-    def test_tightening_a_threshold_catches_the_boundary_trip(self):
-        """59 s early and 299 s late catch the trips sitting on the defaults.
+    def test_loosening_a_threshold_forgives_the_boundary_trip(self):
+        """61 s early and 301 s late forgive the trips sitting on the defaults.
 
-        The reverse of the strictness test: the two trips that are on time at 60
-        and 300 are not on time a second either side of them, which pins the
-        comparison from the other direction.
+        The reverse of the inclusiveness test: the two trips that are not on time
+        at 60 and 300 are on time a second either side of them, which pins the
+        comparison from the other direction. Only the trips a second past each
+        moved threshold are left, one on each side.
         """
         result = run_on_time_performance(
             "punctuality_thresholds",
-            early_seconds=EARLY_THRESHOLD_SECONDS - 1,
-            late_seconds=LATE_THRESHOLD_SECONDS - 1,
+            early_seconds=EARLY_THRESHOLD_SECONDS + 1,
+            late_seconds=LATE_THRESHOLD_SECONDS + 1,
         )
         row = one_row(result.by_stop, stop_sequence=LAST_TIMEPOINT)
 
-        assert row["proportion_early"] == pytest.approx(2 / THRESHOLD_TRIPS)
-        assert row["proportion_late"] == pytest.approx(2 / THRESHOLD_TRIPS)
-        assert row["proportion_not_on_time"] == pytest.approx(4 / THRESHOLD_TRIPS)
+        assert row["proportion_early"] == pytest.approx(1 / THRESHOLD_TRIPS)
+        assert row["proportion_late"] == pytest.approx(1 / THRESHOLD_TRIPS)
+        assert row["proportion_not_on_time"] == pytest.approx(2 / THRESHOLD_TRIPS)
 
     def test_the_percentiles_name_the_columns(self):
         """The reported column names follow the percentiles asked for.

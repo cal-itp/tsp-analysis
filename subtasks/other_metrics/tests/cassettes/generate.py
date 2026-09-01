@@ -572,9 +572,9 @@ def inconsistent_feed() -> Scenario:
 
 
 # on time performance's two thresholds: a vehicle is on time unless it beats its
-# published arrival by more than a minute or misses it by more than five. Stated
-# here because the two punctuality scenarios are built to land either side of
-# them, not because the generator applies them
+# published arrival by a minute or more, or misses it by five minutes or more.
+# Stated here because the two punctuality scenarios are built to land either side
+# of them, not because the generator applies them
 EARLY_THRESHOLD_SECONDS = 60
 LATE_THRESHOLD_SECONDS = 5 * 60
 

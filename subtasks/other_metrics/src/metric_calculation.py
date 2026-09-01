@@ -50,8 +50,8 @@ PUNCTUALITY_STOP_GRAIN = ("shape_id", "stop_sequence", "time_period")
 PUNCTUALITY_PERIOD_GRAIN = ("shape_id", "time_period")
 
 # what counts as early and what counts as late, in seconds off the published
-# arrival. both are strict, so a vehicle exactly this early or exactly this late
-# is on time -- the transit industry's usual "one minute early, five late"
+# arrival. both are inclusive, so a vehicle exactly this early or exactly this
+# late is not on time -- the transit industry's usual "one minute early, five late"
 EARLY_SECONDS = 60
 LATE_SECONDS = 5 * 60
 
@@ -351,10 +351,10 @@ def calculate_on_time_performance(
 
     The deviation is the arrival the vehicle actually made less the arrival the
     schedule published for that trip at that stop, signed so that late is
-    positive. A vehicle is **early** if it beats its published arrival by more
-    than ``early_seconds``, **late** if it misses it by more than
-    ``late_seconds``, and **not on time** if it is either. Both comparisons are
-    strict, so a vehicle exactly a minute early is on time.
+    positive. A vehicle is **early** if it beats its published arrival by
+    ``early_seconds`` or more, **late** if it misses it by ``late_seconds`` or
+    more, and **not on time** if it is either. Both comparisons are inclusive,
+    so a vehicle exactly a minute early is not on time.
 
     Arrivals rather than departures: this asks when the vehicle reached the
     stop, so a bus that pulled in on time and then stood too long is on time
@@ -373,8 +373,8 @@ def calculate_on_time_performance(
             ``stop_grain`` and ``period_grain`` bar ``time_period``, plus
             ``stop_id``, ``arrival_deviation_seconds`` and
             ``scheduled_arrival_pacific``.
-        early_seconds: beat the published arrival by more than this to be early.
-        late_seconds: miss it by more than this to be late.
+        early_seconds: beat the published arrival by this or more to be early.
+        late_seconds: miss it by this or more to be late.
         median_percentile: the lower reported percentile of absolute deviation.
         upper_percentile: the upper one.
         stop_grain: columns identifying one reported per-stop value.
@@ -430,9 +430,9 @@ def calculate_on_time_performance(
     )
 
     arrivals["absolute_deviation_seconds"] = arrivals["arrival_deviation_seconds"].abs()
-    # strict either side, so the thresholds themselves are on time
-    arrivals["is_early"] = arrivals["arrival_deviation_seconds"] < -early_seconds
-    arrivals["is_late"] = arrivals["arrival_deviation_seconds"] > late_seconds
+    # inclusive either side, so the thresholds themselves are not on time
+    arrivals["is_early"] = arrivals["arrival_deviation_seconds"] <= -early_seconds
+    arrivals["is_late"] = arrivals["arrival_deviation_seconds"] >= late_seconds
     # a vehicle cannot be both, so this is the two proportions added rather than
     # anything that could overlap
     arrivals["is_not_on_time"] = arrivals["is_early"] | arrivals["is_late"]
