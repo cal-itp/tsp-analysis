@@ -181,6 +181,14 @@ def get_schedule_rt_stop_times(
     with the schedule feed that was active on it, keeps the stops flagged as
     timepoints on every trip, and joins them to the realtime stop times.
 
+    Each row also carries the arrival dim_stop_arrivals published for that trip
+    at that stop, so how late the vehicle was is on the same row as how long it
+    took to get there. Two metrics read this frame:
+    :func:`src.metric_calculation.calculate_travel_time_variability`, which uses
+    only the realtime columns, and
+    :func:`src.metric_calculation.calculate_on_time_performance`, which compares
+    the two arrivals.
+
     Args:
         engine: SQLAlchemy engine pointed at the warehouse.
         env: Jinja environment loading from templates/.
@@ -191,8 +199,22 @@ def get_schedule_rt_stop_times(
         shape_ids: the service patterns to report on.
 
     Returns:
-        One row per trip and timepoint, ready for
-        :func:`src.metric_calculation.calculate_travel_time_variability`.
+        One row per trip and timepoint, carrying ``service_date``, ``trip_id``,
+        ``trip_key``, ``stop_id``, ``feed_key``, ``shape_id``,
+        ``stop_sequence``, ``actual_arrival_pacific``,
+        ``actual_departure_pacific``, ``n_predictions``, ``pt_geom``,
+        ``scheduled_arrival_sec``, ``scheduled_arrival_pacific`` and
+        ``arrival_deviation_seconds``.
+
+        ``scheduled_arrival_sec`` is seconds since midnight on the service date,
+        as dim_stop_arrivals stores it, so it exceeds 86400 for a trip running
+        past midnight. ``scheduled_arrival_pacific`` is that put back on the
+        wall clock, and ``arrival_deviation_seconds`` is the actual arrival less
+        it, signed so that late is positive.
+
+        The three scheduled columns are null where the published schedule has no
+        row for a trip the feed reported running; the realtime columns are
+        always populated.
     """
     return pd.read_sql_query(
         env.get_template("schedule_rt_stop_times.sql").render(

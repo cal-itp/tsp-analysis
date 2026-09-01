@@ -76,6 +76,27 @@ timepoints_on_route as (
         and stop_times_summary_on_route.n_timepoint = stop_times_summary_on_route.n_stop_times
     group by 1, 2, 3, 4, 5
 ),
+-- the published arrival at those same stops. dim_stop_arrivals is grained by
+-- feed version rather than service date, so trip_id is what ties it to the
+-- realtime side
+--
+-- the arrival, not the departure: on time performance asks when the vehicle
+-- reached the stop, so a bus that pulled in on time and then stood too long is
+-- on time. the wait metrics measure departure to departure instead, and the
+-- dwell between the two is what separates the answers
+stop_arrivals as (
+    select
+        feed_key,
+        trip_id,
+        stop_id,
+        stop_sequence,
+        arrival_sec,
+    from mart_gtfs.dim_stop_arrivals
+    where
+        -- _feed_valid_from partitions dim_stop_arrivals
+        _feed_valid_from in ('{{ FEED_VALID_FROMS | join("', '") }}')
+        and feed_key in ('{{ FEED_KEYS | join("', '") }}')
+),
 -- get rt data
 rt_stop_times as (
     select
@@ -92,24 +113,53 @@ rt_stop_times as (
     using(service_date, schedule_base64_url)
     where service_date in ('{{ TARGET_DATES | join("', '") }}')
     and schedule_base64_url in ('{{ SCHEDULE_BASE64_URLS | join("', '") }}')
+),
+-- get rt stop arrivals, with the arrival the schedule published for the same
+-- trip at the same stop alongside
+timepoint_stop_times as (
+    select
+        rt_stop_times.service_date,
+        rt_stop_times.trip_id,
+        rt_stop_times.trip_key,
+        rt_stop_times.stop_id,
+        valid_trips.feed_key,
+        valid_trips.shape_id,
+        rt_stop_times.stop_sequence,
+        rt_stop_times.actual_arrival_pacific,
+        rt_stop_times.actual_departure_pacific,
+        rt_stop_times.n_predictions,
+        stop_arrivals.arrival_sec as scheduled_arrival_sec,
+        -- GTFS counts a stop time from midnight on the trip's own service date
+        -- and keeps counting past 24:00, so a trip listed under the 17th but
+        -- calling at 00:15 on the 18th publishes 87300 rather than 900. Adding
+        -- the seconds to that midnight puts it back on the wall clock, which is
+        -- where the realtime side already is -- so the two are subtractable and
+        -- the day part comes out right either side of the boundary
+        datetime_add(
+            datetime(rt_stop_times.service_date),
+            interval cast(stop_arrivals.arrival_sec as int64) second
+        ) as scheduled_arrival_pacific,
+        timepoints_on_route.pt_geom
+    from rt_stop_times
+    -- trip_id is only unique within a service date
+    inner join valid_trips
+    using(service_date, trip_id)
+    inner join timepoints_on_route
+    using(stop_sequence, shape_id)
+    -- left, so a trip the schedule does not cover keeps its realtime stop times
+    -- and reports a null published arrival rather than dropping out -- the
+    -- travel time metric reads this same frame and needs no schedule at all
+    left join stop_arrivals
+        on stop_arrivals.feed_key = valid_trips.feed_key
+        and stop_arrivals.trip_id = rt_stop_times.trip_id
+        and stop_arrivals.stop_id = rt_stop_times.stop_id
+        and stop_arrivals.stop_sequence = rt_stop_times.stop_sequence
 )
--- get rt stop arrivals
 select
-    rt_stop_times.service_date,
-    rt_stop_times.trip_id,
-    rt_stop_times.trip_key,
-    rt_stop_times.stop_id,
-    valid_trips.feed_key,
-    valid_trips.shape_id,
-    rt_stop_times.stop_sequence,
-    rt_stop_times.actual_arrival_pacific,
-    rt_stop_times.actual_departure_pacific,
-    rt_stop_times.n_predictions,
-    timepoints_on_route.pt_geom
-from rt_stop_times
--- trip_id is only unique within a service date
-inner join valid_trips
-using(service_date, trip_id)
-inner join timepoints_on_route
-using(stop_sequence, shape_id)
+    *,
+    -- signed so that late is positive. null wherever the schedule had nothing
+    -- to compare against, which is what on time performance drops
+    datetime_diff(actual_arrival_pacific, scheduled_arrival_pacific, second)
+        as arrival_deviation_seconds,
+from timepoint_stop_times
 order by service_date, trip_key, stop_sequence asc

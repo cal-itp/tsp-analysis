@@ -4,12 +4,9 @@ Each test names a cassette and says what the two reported tables should be.
 Nothing in between is asserted: the loaders are private, so the run goes from
 parquet straight to ``calculate_on_time_performance``'s output.
 
-**This file is red until the metric exists.** It is the specification for it,
-written first. What it assumes:
+What the metric does, restated here so a change to it has to be made in two
+places:
 
-* ``src.metric_calculation.calculate_on_time_performance`` takes the timepoint
-  frame and returns an ``OnTimePerformance(by_stop, by_period)`` pair, the way
-  ``get_matching_shapes_feeds`` returns a ``MatchingShapes``.
 * The deviation is the actual arrival at a timepoint less the arrival the
   schedule published for that trip at that stop, in seconds, signed so that late
   is positive.
@@ -19,9 +16,6 @@ written first. What it assumes:
   arrivals in the group, and the two thresholds are strict.
 * The day part comes from the **scheduled** arrival, not the actual one, so a
   trip running late is still reported in the day part it was promised in.
-* The timepoint frame is the one ``calculate_travel_time_variability`` already
-  reads, with the published arrival joined onto it -- so no new loader, only a
-  scheduled arrival column on the existing one.
 
 None of the cassettes have any jitter, so every value below is exact and derived
 from the service the fixture describes rather than read back off a previous run.
@@ -33,8 +27,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.metric_calculation import calculate_on_time_performance
-from tests.conftest import CASSETTES, _metric_inputs
+from tests.conftest import CASSETTES, run_on_time_performance
 
 # stops 1, 2 and 5 are timepoints on every trip. On time performance reports
 # every one of them -- unlike travel time variability, the first has no
@@ -190,24 +183,6 @@ PROPORTION_COLUMNS = [
 ]
 
 
-# the loaded frame is cached and shared, so each run gets its own copy -- a
-# metric that quietly mutated its input would otherwise leak into the next test.
-#
-# NOTE: this belongs in conftest.py beside run_travel_time_variability and
-# run_expected_wait. It lives here only while the metric does not exist, so that
-# the missing import fails this file rather than the whole suite's collection.
-def run_on_time_performance(cassette_name: str, **kwargs):
-    """Load a cassette and report on time performance over it."""
-    return calculate_on_time_performance(
-        _metric_inputs(cassette_name).stop_times.copy(), **kwargs
-    )
-
-
-@pytest.fixture
-def on_time_performance(cassette_name: str):
-    return run_on_time_performance(cassette_name)
-
-
 @pytest.fixture
 def by_stop(on_time_performance) -> pd.DataFrame:
     return on_time_performance.by_stop
@@ -289,8 +264,7 @@ class TestTheGrain:
 
     @pytest.mark.parametrize("cassette_name", CASSETTES)
     def test_one_row_per_stop_and_day_part_that_saw_an_arrival(self, by_stop):
-        """A day part a stop saw no arrival in is absent, not present and empty.
-        """
+        """A day part a stop saw no arrival in is absent, not present and empty."""
         assert not by_stop.duplicated(
             ["shape_id", "stop_sequence", "time_period"]
         ).any()

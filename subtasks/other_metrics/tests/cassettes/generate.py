@@ -26,8 +26,8 @@ the fixture.
                             GTFS hours past 24
     inconsistent_feed/      a feed contradicting itself about the order of two
                             stops, and one trip id running on two dates
-    mixed_punctuality/      ten trips against their own timetable: one late all
-                            the way down the line, one early at one stop only
+    mixed_punctuality/      ten trips against their own timetable: three late all
+                            the way down the line, three early at one stop only
     punctuality_thresholds/ trips landing exactly on the on time thresholds, and
                             one second past them
 
@@ -578,10 +578,13 @@ def inconsistent_feed() -> Scenario:
 EARLY_THRESHOLD_SECONDS = 60
 LATE_THRESHOLD_SECONDS = 5 * 60
 
-# mixed_punctuality: which of the ten trips misbehave, and how
-LATE_TRIP = 4
+# mixed_punctuality: which of the ten trips misbehave, and how. Three of each,
+# rather than one, so that a percentile has somewhere to land other than a
+# repeated zero: with 3 of 10 arrivals off the mark, both the median and the 80th
+# percentile of the last timepoint's absolute deviations move
+LATE_TRIPS = (1, 4, 7)
 LATE_SECONDS = 6 * 60
-EARLY_ARRIVAL_TRIP = 7
+EARLY_ARRIVAL_TRIPS = (3, 6, 9)
 EARLY_ARRIVAL_SECONDS = 2 * 60
 LAST_TIMEPOINT = TIMEPOINT_SEQUENCES[-1]
 
@@ -596,22 +599,31 @@ BOUNDARY_DEVIATIONS = {
 
 
 def mixed_punctuality() -> Scenario:
-    """Ten trips against their own timetable: one late throughout, one early once.
+    """Ten trips against their own timetable: three late throughout, three early once.
 
     The schedule here is the timetable the trips were built from rather than the
     shared 06:00 grid, so a trip that ran to it deviates by exactly zero and the
-    two that did not deviate by exactly what they were moved.
+    ones that did not deviate by exactly what they were moved.
 
-    Eight trips run to time. One runs six minutes late at every stop -- late
+    Four trips run to time. Three run six minutes late at every stop -- late
     enough to miss the five minute threshold, and late everywhere, so every
-    timepoint reports it. One runs to time all the way down the line and then
-    reaches the *last* timepoint two minutes early, its departure left where it
-    was: early enough to beat the one minute threshold, at one stop only.
+    timepoint reports them. Three run to time all the way down the line and then
+    reach the *last* timepoint two minutes early, their departures left where
+    they were: early enough to beat the one minute threshold, at one stop only.
 
     That asymmetry is the point. A metric reported per stop must show the early
-    trip at the last timepoint and nowhere else, so the first two timepoints and
+    trips at the last timepoint and nowhere else, so the first two timepoints and
     the last one cannot report the same numbers -- and the pooled table cannot be
     the average of the per-stop ones.
+
+    Three of each rather than one of each, so the percentiles separate the stops
+    as well as the proportions do. Sorted absolute deviations are
+
+        stops 1 and 2   0 x 7, 360 x 3          p50 =   0.0   p80 = 360.0
+        stop 5          0 x 4, 120 x 3, 360 x 3 p50 = 120.0   p80 = 360.0
+
+    With a single early trip the last timepoint's median stayed on zero with
+    everything else, and only the proportions told the stops apart.
 
     Trips run every 15 minutes from 04:15, so all thirty timepoint arrivals fall
     inside Early AM and the day part is never what splits them.
@@ -624,10 +636,10 @@ def mixed_punctuality() -> Scenario:
     ]
 
     ran = list(scheduled)
-    ran[LATE_TRIP] = shift_trip(ran[LATE_TRIP], LATE_SECONDS)
-    ran[EARLY_ARRIVAL_TRIP] = shift_arrival(
-        ran[EARLY_ARRIVAL_TRIP], LAST_TIMEPOINT, -EARLY_ARRIVAL_SECONDS
-    )
+    for t in LATE_TRIPS:
+        ran[t] = shift_trip(ran[t], LATE_SECONDS)
+    for t in EARLY_ARRIVAL_TRIPS:
+        ran[t] = shift_arrival(ran[t], LAST_TIMEPOINT, -EARLY_ARRIVAL_SECONDS)
 
     return Scenario(
         name="mixed_punctuality",
@@ -635,11 +647,11 @@ def mixed_punctuality() -> Scenario:
         scheduled_trips=scheduled,
         notes=[
             "10 trips every 15 minutes from 04:15, all of them Early AM",
-            "8 run exactly to time, at every timepoint",
-            "1 runs 360 s late at every timepoint",
-            "1 reaches the last timepoint 120 s early, and is on time before it",
-            "stops 1 and 2: 9 deviations of 0 s and one of +360 s",
-            "stop 5: 8 of 0 s, one of -120 s and one of +360 s",
+            "4 run exactly to time, at every timepoint",
+            "3 run 360 s late at every timepoint",
+            "3 reach the last timepoint 120 s early, and are on time before it",
+            "stops 1 and 2: 7 deviations of 0 s and 3 of +360 s",
+            "stop 5: 4 of 0 s, 3 of -120 s and 3 of +360 s",
         ],
     )
 
