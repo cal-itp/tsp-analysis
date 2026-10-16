@@ -1,6 +1,6 @@
 # Cassettes
 
-Five synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
+Seven synthetic `mart_gtfs` datasets, one directory each. `conftest.py` stands a
 DuckDB database up over one of them and runs the loaders' SQL against it
 verbatim, so a cassette answers the query the loader actually issued.
 
@@ -10,8 +10,8 @@ run goes from parquet straight to a reported table, and `src/data_loading.py` is
 private as far as the tests are concerned, so it can change freely as long as the
 metrics still come out the same.
 
-One file per metric: `../test_travel_time_variability.py` and
-`../test_expected_wait.py`.
+One file per metric: `../test_travel_time_variability.py`,
+`../test_expected_wait.py` and `../test_on_time_performance.py`.
 
 | Directory | What it pins down |
 | --- | --- |
@@ -20,6 +20,8 @@ One file per metric: `../test_travel_time_variability.py` and
 | `variable_travel_time/` | a p80/p20 travel time ratio of exactly 2.0 |
 | `two_service_dates/` | headways either side of a service date boundary |
 | `inconsistent_feed/` | a feed contradicting itself, and trip ids reused across dates |
+| `mixed_punctuality/` | trips late all the way down the line, and trips early at a single stop |
+| `punctuality_thresholds/` | trips landing exactly on the on time thresholds, and a second past them |
 
 ## What is in a cassette
 
@@ -65,14 +67,27 @@ the fixture.
 
 ## The scheduled baseline
 
-`dim_stop_arrivals` publishes the same even 15 minute grid from 06:00 in every
-cassette but one, on that cassette's own `trip_id`s — sharing the ids is what
-lets a realtime stop time find its scheduled counterpart. So the scheduled
-headway is 900 s everywhere, and a cassette that runs something else against it
-has a measurable excess wait.
+`dim_stop_arrivals` publishes the same even 15 minute grid from 06:00 by default,
+on that cassette's own `trip_id`s — sharing the ids is what lets a realtime stop
+time find its scheduled counterpart. So the scheduled headway is 900 s, and a
+cassette that runs something else against it has a measurable excess wait.
 
-`two_service_dates` opts out and publishes each trip's own times instead: where
-those seconds are counted from is the whole point of it.
+A scenario setting `scheduled_trips` opts out and publishes those instead. Three
+do:
+
+- `two_service_dates`, because where its seconds are counted from is the whole
+  point of it
+- `mixed_punctuality` and `punctuality_thresholds`, which publish the timetable
+  their trips were built from and then move some of the trips off it. Against
+  the shared 06:00 grid every trip would be hours out and no deviation would
+  mean anything; against their own timetable a trip that was not moved deviates
+  by exactly zero, and one that was deviates by exactly what it was moved.
+
+It publishes both an `arrival_sec` and a `departure_sec`, separated by the dwell.
+A headway runs departure to departure, so the wait metrics only ever read the
+second; on time performance compares the published **arrival** against the one
+the vehicle actually made, so a metric reaching for the wrong column of the two
+comes out 30 s off.
 
 Both schedule tables are grained by feed version rather than service date, so a
 `trip_id` running on more than one date is published **once**. Publishing it
@@ -224,6 +239,67 @@ That is the definition earning its keep. Measuring to the next arrival instead
 would have taken the bad stop time at face value and reported a 730 s gap where
 the two vehicles were a clean 900 s apart, giving stop 2 a *negative* excess
 wait: a feed error surfacing as service that beat its timetable.
+
+## mixed_punctuality
+
+10 trips every 15 minutes from 04:15, measured against the timetable they were
+built from. Four run exactly to time. Three run 360 s late at every stop. Three
+run to time all the way down the line and then reach the **last** timepoint
+120 s early, their departures left where they were.
+
+| stop | deviations | p50 \|dev\| | p80 \|dev\| | early | late |
+| --- | --- | --- | --- | --- | --- |
+| 1 and 2 | 7 × 0 s, 3 × +360 s | 0 s | 360 s | 0 | 0.3 |
+| 5 | 4 × 0 s, 3 × −120 s, 3 × +360 s | 120 s | 360 s | 0.3 | 0.3 |
+| pooled | 18 × 0 s, 3 × 120 s, 9 × 360 s | 0 s | 360 s | 3/30 | 9/30 |
+
+The asymmetry is the point. A trip late everywhere and a trip early in one place
+cannot both be reported by a per-trip number, so the last timepoint has to differ
+from the two before it — and the pooled row cannot be the average of the three.
+It is also the only cassette where per-arrival and per-trip counting disagree:
+counting trips would give 3/10 and 3/10 pooled rather than 3/30 and 9/30.
+
+Three of each rather than one of each so the percentiles separate the stops as
+well as the proportions do — with a single early trip the last timepoint's median
+stayed on zero with everything else.
+
+Everything falls inside Early AM, so the day part never enters into it. The early
+arrivals do shorten one segment, so the travel time into stop 5 takes two values
+here: **use this cassette for punctuality, not travel time.**
+
+## punctuality_thresholds
+
+8 trips every 15 minutes from 04:30. A whole trip moves together, so each carries
+one deviation the whole way down the line and every timepoint reports the same
+split:
+
+| trip | deviation | early? | late? |
+| --- | --- | --- | --- |
+| 1 | −60 s | **yes** — exactly on the threshold | |
+| 2 | −61 s | **yes** | |
+| 3 | +300 s | | **yes** — exactly on the threshold |
+| 4 | +301 s | | **yes** |
+| the other four | 0 s | | |
+
+Both comparisons are inclusive, so half the service misses its published time
+and a quarter of it is reported as early, a quarter as late. **A `<` in place of
+a `<=` halves both proportions and nothing else in the suite notices.**
+
+It is also the only cassette whose percentiles land inside an interpolation
+rather than on a repeated value, which is what makes the two tables visibly
+answer different questions:
+
+| | sorted \|deviation\| | p50 | p80 |
+| --- | --- | --- | --- |
+| per stop | 0, 0, 0, 0, 60, 61, 300, 301 | 30.0 | 61 + 0.6 × 239 = **204.4** |
+| pooled | the same eight, three times over | 30.0 | **300.0** |
+
+All three stops report 204.4, so any averaging of them gives 204.4 back. Pooling
+the 24 arrivals instead puts the 80th percentile at the 18.4th sorted value,
+inside the three 300s.
+
+Every stop time of a trip moves by the same amount, so travel times are
+untouched and this cassette stays in the constant travel time set.
 
 ## Regenerating
 

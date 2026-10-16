@@ -16,6 +16,7 @@ dependencies = [
     "sqlalchemy-bigquery",
     "google-cloud-bigquery-storage>=2.39.0",
     "pyarrow>=25.0.0",
+    "google-cloud-secret-manager>=2.30.0",
 ]
 
 [dependency-groups]

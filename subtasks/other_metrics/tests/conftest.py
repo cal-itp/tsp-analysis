@@ -9,9 +9,9 @@ templates stay under test.
 The queries are BigQuery dialect, so they are transpiled to DuckDB on the way in.
 
 **A test sees a cassette going in and a metric coming out, and nothing between.**
-The fixtures are the metrics themselves -- ``travel_time_variability`` and
-``expected_wait`` -- each one the whole run, from the first query through to the
-reported table. ``src.data_loading`` is private as far as these tests are
+The fixtures are the metrics themselves -- ``travel_time_variability``,
+``expected_wait`` and ``on_time_performance`` -- each one the whole run, from the
+first query through to the reported table. ``src.data_loading`` is private as far as these tests are
 concerned: no test names a loader, holds one of their frames, or asserts anything
 about their shape, so how the data is loaded can change freely as long as the
 metrics still come out the same.
@@ -38,7 +38,9 @@ from src.data_loading import (
     get_schedule_rt_stop_times,
 )
 from src.metric_calculation import (
+    OnTimePerformance,
     calculate_expected_wait,
+    calculate_on_time_performance,
     calculate_travel_time_variability,
 )
 
@@ -167,6 +169,13 @@ def run_expected_wait(cassette_name: str, **kwargs) -> pd.DataFrame:
     )
 
 
+def run_on_time_performance(cassette_name: str, **kwargs) -> OnTimePerformance:
+    """Load a cassette and report on time performance over it."""
+    return calculate_on_time_performance(
+        _metric_inputs(cassette_name).stop_times.copy(), **kwargs
+    )
+
+
 @pytest.fixture
 def cassette_name() -> str:
     """Which scenario to play.
@@ -186,3 +195,8 @@ def travel_time_variability(cassette_name: str) -> pd.DataFrame:
 @pytest.fixture
 def expected_wait(cassette_name: str) -> pd.DataFrame:
     return run_expected_wait(cassette_name)
+
+
+@pytest.fixture
+def on_time_performance(cassette_name: str) -> OnTimePerformance:
+    return run_on_time_performance(cassette_name)

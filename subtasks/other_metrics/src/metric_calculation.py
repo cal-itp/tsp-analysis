@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Sequence
+from typing import NamedTuple
 
 import pandas as pd
 
@@ -42,6 +43,17 @@ HOUR_TO_TIME_PERIOD = {
 # one metric value per stop and day part, on this service pattern. stop_id is
 # not in the grain: it is fixed by shape_id and stop_sequence, and rides along
 WAIT_GRAIN = ("shape_id", "stop_sequence", "time_period")
+
+# on time performance is reported at two grains at once: where along the line
+# punctuality goes wrong, and how the service pattern did overall in a day part
+PUNCTUALITY_STOP_GRAIN = ("shape_id", "stop_sequence", "time_period")
+PUNCTUALITY_PERIOD_GRAIN = ("shape_id", "time_period")
+
+# what counts as early and what counts as late, in seconds off the published
+# arrival. both are inclusive, so a vehicle exactly this early or exactly this
+# late is not on time -- the transit industry's usual "one minute early, five late"
+EARLY_SECONDS = 60
+LATE_SECONDS = 5 * 60
 
 
 def calculate_travel_time_variability(
@@ -259,11 +271,7 @@ def calculate_expected_wait(
     summary["rt_expected_wait_seconds"] = (
         summary["mean_rt_headway_seconds"]
         / 2
-        * (
-            1
-            + summary["rt_headway_variance"]
-            / summary["mean_rt_headway_seconds"] ** 2
-        )
+        * (1 + summary["rt_headway_variance"] / summary["mean_rt_headway_seconds"] ** 2)
     )
     summary["excess_wait_seconds"] = (
         summary["rt_expected_wait_seconds"] - summary["scheduled_expected_wait_seconds"]
@@ -281,3 +289,166 @@ def calculate_expected_wait(
     # groupby already sorts by the keys, but say so rather than depend on it --
     # time_period is ordered, so this is clock order and not alphabetical
     return summary.sort_values(group_keys).reset_index(drop=True)
+
+
+class OnTimePerformance(NamedTuple):
+    """On time performance reported at both of its grains."""
+
+    by_stop: pd.DataFrame
+    """One row per stop and day part: where along the line punctuality goes."""
+
+    by_period: pd.DataFrame
+    """One row per day part, pooling every timepoint on the pattern."""
+
+
+def _summarise_punctuality(
+    arrivals: pd.DataFrame,
+    group_keys: list[str],
+    *,
+    median_percentile: float,
+    upper_percentile: float,
+) -> pd.DataFrame:
+    """One punctuality row per group, at whatever grain ``group_keys`` names."""
+    # observed, so a day part a stop saw no arrival in is absent rather than
+    # present with a zero count -- grouping on a categorical would otherwise
+    # invent a row for every period on every stop
+    grouped = arrivals.groupby(group_keys, observed=True)
+
+    summary = grouped.agg(
+        n_timepoint_arrivals=("absolute_deviation_seconds", "size"),
+    )
+
+    # the percentiles are of the *absolute* deviation, so a stop where half the
+    # service runs early and half runs late reports how far off it was, not the
+    # zero the two sides would average out to
+    deviation = grouped["absolute_deviation_seconds"]
+    for percentile in [median_percentile, upper_percentile]:
+        summary[f"p{percentile * 100:.0f}_absolute_deviation_seconds"] = (
+            deviation.quantile(percentile)
+        )
+
+    # the mean of a boolean is the proportion of it that is true. every
+    # proportion is over timepoint arrivals rather than trips: a trip late at
+    # every stop counts once per stop, which is what makes the pooled table more
+    # than a restatement of the per-stop one
+    for column in ["is_early", "is_late", "is_not_on_time"]:
+        summary[column.replace("is_", "proportion_")] = grouped[column].mean()
+
+    # the headline number, reported alongside its complement so a table can lead
+    # with the share of service that made its published time rather than the
+    # share that missed it
+    summary["schedule_adherence"] = 1 - summary["proportion_not_on_time"]
+
+    return summary.reset_index().sort_values(group_keys).reset_index(drop=True)
+
+
+def calculate_on_time_performance(
+    schedule_rt_stop_times: pd.DataFrame,
+    *,
+    early_seconds: int = EARLY_SECONDS,
+    late_seconds: int = LATE_SECONDS,
+    median_percentile: float = 0.5,
+    upper_percentile: float = 0.8,
+    stop_grain: Sequence[str] = PUNCTUALITY_STOP_GRAIN,
+    period_grain: Sequence[str] = PUNCTUALITY_PERIOD_GRAIN,
+) -> OnTimePerformance:
+    """On time performance at every timepoint: how far off the schedule service ran.
+
+    The deviation is the arrival the vehicle actually made less the arrival the
+    schedule published for that trip at that stop, signed so that late is
+    positive. A vehicle is **early** if it beats its published arrival by
+    ``early_seconds`` or more, **late** if it misses it by ``late_seconds`` or
+    more, and **not on time** if it is either. Both comparisons are inclusive,
+    so a vehicle exactly a minute early is not on time.
+
+    Arrivals rather than departures: this asks when the vehicle reached the
+    stop, so a bus that pulled in on time and then stood too long is on time
+    here. The wait metrics measure departure to departure instead.
+
+    Every value is reported twice, at two grains. The per-stop table says where
+    along the line punctuality goes -- a trip that leaves on time and loses six
+    minutes by the end of the run shows up at the last timepoints only. The
+    pooled one says how the pattern did overall in a day part. The pooled
+    percentiles are taken over the arrivals, not over the per-stop numbers, so
+    they are not the average of the table above them.
+
+    Args:
+        schedule_rt_stop_times: one row per trip and timepoint, as returned by
+            templates/schedule_rt_stop_times.sql. Needs the columns in
+            ``stop_grain`` and ``period_grain`` bar ``time_period``, plus
+            ``stop_id``, ``arrival_deviation_seconds`` and
+            ``scheduled_arrival_pacific``.
+        early_seconds: beat the published arrival by this or more to be early.
+        late_seconds: miss it by this or more to be late.
+        median_percentile: the lower reported percentile of absolute deviation.
+        upper_percentile: the upper one.
+        stop_grain: columns identifying one reported per-stop value.
+        period_grain: columns identifying one reported pooled value.
+
+    Returns:
+        An :class:`OnTimePerformance` pair. Both frames carry
+        ``n_timepoint_arrivals``, ``p50_absolute_deviation_seconds``,
+        ``p80_absolute_deviation_seconds``, ``proportion_early``,
+        ``proportion_late``, ``proportion_not_on_time`` and
+        ``schedule_adherence``, which is one less that last one -- the share of
+        arrivals that made their published time; ``by_stop`` also carries
+        ``stop_sequence`` and ``stop_id``. The percentile column names follow the
+        percentiles asked for.
+
+        Every proportion is of the timepoint arrivals in the group, not of the
+        trips. A trip running late at three timepoints is three late arrivals,
+        so the pooled proportions weight it three times as heavily as a trip
+        that went early at one stop only.
+
+        ``time_period`` is an ordered categorical over TIME_PERIOD_ORDER, taken
+        from the hour of the **scheduled** arrival -- a trip running late is
+        reported in the day part it was promised in, and moving the boundary
+        cannot move a trip between day parts.
+
+        Timepoints the published schedule has no arrival for are dropped: there
+        is nothing to measure them against. They are still counted by the travel
+        time metric, which needs no schedule.
+    """
+    stop_grain = list(stop_grain)
+    period_grain = list(period_grain)
+
+    # stop_id is fixed by shape_id and stop_sequence, so grouping on it as well
+    # splits nothing further -- it just carries the column through without a
+    # second pass to merge it back on
+    stop_keys = list(stop_grain)
+    if "stop_id" not in stop_keys and "stop_sequence" in stop_keys:
+        stop_keys.insert(stop_keys.index("stop_sequence") + 1, "stop_id")
+
+    # a realtime arrival with no published counterpart cannot be measured
+    # against one. this is the same left join the travel time metric relies on
+    # to keep an unscheduled trip's run time, so the drop belongs here rather
+    # than in the query
+    arrivals = schedule_rt_stop_times.loc[
+        schedule_rt_stop_times["arrival_deviation_seconds"].notna()
+    ].copy()
+
+    # the hour the vehicle was *due*, by the wall clock. the query has already
+    # put the published seconds back on the clock, so a trip published as 24:15
+    # on one service date is counted in Owl on the following morning
+    arrivals["time_period"] = pd.Categorical(
+        arrivals["scheduled_arrival_pacific"].dt.hour.map(HOUR_TO_TIME_PERIOD),
+        categories=TIME_PERIOD_ORDER,
+        ordered=True,
+    )
+
+    arrivals["absolute_deviation_seconds"] = arrivals["arrival_deviation_seconds"].abs()
+    # inclusive either side, so the thresholds themselves are not on time
+    arrivals["is_early"] = arrivals["arrival_deviation_seconds"] <= -early_seconds
+    arrivals["is_late"] = arrivals["arrival_deviation_seconds"] >= late_seconds
+    # a vehicle cannot be both, so this is the two proportions added rather than
+    # anything that could overlap
+    arrivals["is_not_on_time"] = arrivals["is_early"] | arrivals["is_late"]
+
+    percentiles = {
+        "median_percentile": median_percentile,
+        "upper_percentile": upper_percentile,
+    }
+    return OnTimePerformance(
+        by_stop=_summarise_punctuality(arrivals, stop_keys, **percentiles),
+        by_period=_summarise_punctuality(arrivals, period_grain, **percentiles),
+    )
