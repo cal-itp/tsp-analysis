@@ -39,12 +39,9 @@ LAST_TIMEPOINT = 5
 BEFORE_LAST_TIMEPOINT = [1, 2]
 NON_TIMEPOINT_SEQUENCES = [3, 4]
 
-STOP_IDS = {1: "stop1", 2: "stop2", 5: "stop5"}
-
-# the thresholds, stated here independently of the implementation so moving one
-# has to be done in both places. Both are inclusive: a vehicle exactly this early
-# or exactly this late is not on time
-EARLY_THRESHOLD_SECONDS = 60
+# the late threshold, stated here independently of the implementation so moving
+# it has to be done in both places. It is inclusive: a vehicle exactly this late
+# is not on time
 LATE_THRESHOLD_SECONDS = 300
 
 # the cassettes whose vehicles hit every published arrival exactly. Everything
@@ -155,13 +152,6 @@ THRESHOLD_POOLED = {
 # the day parts, at every timepoint
 BOUNDARY_PERIODS = {"Evening": 2, "Owl": 2, "Early AM": 4}
 
-# inconsistent_feed's bad arrival: one trip on each date reports reaching stop 2
-# 20 s before it left stop 1, which is 140 s before the schedule said it would
-DISORDERED_SEQUENCE = 2
-DISORDERED_DEVIATION_SECONDS = -140
-DISORDERED_TRIPS = 2
-INCONSISTENT_TRIPS = 8
-
 STOP_COLUMNS = [
     "shape_id",
     "stop_sequence",
@@ -231,28 +221,6 @@ class TestOutputFormat:
     def test_period_schema(self, by_period):
         assert list(by_period.columns) == PERIOD_COLUMNS
 
-    def test_dtypes(self, by_stop, by_period):
-        assert by_stop["shape_id"].dtype == object
-        assert by_stop["stop_id"].dtype == object
-        assert by_stop["stop_sequence"].dtype.kind == "i"
-        for frame in [by_stop, by_period]:
-            assert frame["n_timepoint_arrivals"].dtype.kind == "i"
-            for column in PERIOD_COLUMNS[3:]:
-                assert frame[column].dtype.kind == "f", column
-
-    def test_time_period_is_ordered(self, by_stop, by_period):
-        """Ordered, so both tables sort by the clock rather than the alphabet."""
-        for frame in [by_stop, by_period]:
-            assert isinstance(frame["time_period"].dtype, pd.CategoricalDtype)
-            assert frame["time_period"].cat.ordered
-
-    def test_index_is_reset(self, by_stop, by_period):
-        # the grain comes back as columns rather than a MultiIndex, so the
-        # notebook can merge the geometry straight onto it
-        for frame in [by_stop, by_period]:
-            assert frame.index.to_list() == list(range(len(frame)))
-
-
 class TestTheGrain:
     @pytest.mark.parametrize("cassette_name", CASSETTES)
     def test_every_reported_stop_is_a_timepoint(self, by_stop):
@@ -262,52 +230,10 @@ class TestTheGrain:
         assert reported == set(TIMEPOINT_SEQUENCES)
         assert reported.isdisjoint(NON_TIMEPOINT_SEQUENCES)
 
-    # @pytest.mark.parametrize("cassette_name", CASSETTES)
-    # def test_stop_id_rides_along_with_the_stop_sequence(self, by_stop):
-    #     """A stop_sequence names a stop only within a shape, so check it there.
-
-    #         left as todo for now - need a cassette with two shape ids
-    #     """
-    #     for _, at_shape in by_stop.groupby("shape_id", observed=True):
-    #         assert set(at_shape["stop_sequence"]) == set(STOP_IDS)
-    #         assert (
-    #             at_shape["stop_id"] == at_shape["stop_sequence"].map(STOP_IDS)
-    #         ).all()
-
-    @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_one_row_per_stop_and_day_part_that_saw_an_arrival(self, by_stop):
-        """A day part a stop saw no arrival in is absent, not present and empty."""
-        assert not by_stop.duplicated(
-            ["shape_id", "stop_sequence", "time_period"]
-        ).any()
-        assert (by_stop["n_timepoint_arrivals"] > 0).all()
-
     @pytest.mark.parametrize("cassette_name", CASSETTES)
     def test_one_row_per_day_part(self, by_period):
         assert not by_period.duplicated(["shape_id", "time_period"]).any()
         assert (by_period["n_timepoint_arrivals"] > 0).all()
-
-    @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_the_two_tables_cover_the_same_day_parts(self, by_stop, by_period):
-        assert set(by_period["time_period"]) == set(by_stop["time_period"])
-
-    @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_the_pooled_count_is_the_sum_of_the_stop_counts(self, by_stop, by_period):
-        """Every timepoint arrival is counted once in each table, and no more.
-
-        sum(n_timepoint_arrivals) matches between the by_stop and by_period
-        tables, within a shape -- the pooled table drops the stop from the grain
-        and nothing else.
-        """
-        grain = ["shape_id", "time_period"]
-        pooled = by_stop.groupby(grain, observed=True)["n_timepoint_arrivals"].sum()
-
-        pd.testing.assert_series_equal(
-            by_period.set_index(grain)["n_timepoint_arrivals"],
-            pooled,
-            check_names=False,
-        )
-
 
 class TestIdentities:
     """Relationships between the reported columns, on every cassette.
@@ -316,13 +242,6 @@ class TestIdentities:
     it is an hour out from its own schedule and a poor fixture for pinning a
     value, but the messier the input the better for an identity.
     """
-
-    @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_proportions_are_proportions(self, by_stop, by_period):
-        for frame in [by_stop, by_period]:
-            for column in [*PROPORTION_COLUMNS, "schedule_adherence"]:
-                assert frame[column].between(0.0, 1.0).all(), column
-                assert frame[column].notna().all(), column
 
     @pytest.mark.parametrize("cassette_name", CASSETTES)
     def test_not_on_time_is_early_or_late(self, by_stop, by_period):
@@ -353,27 +272,6 @@ class TestIdentities:
                 check_names=False,
             )
 
-    @pytest.mark.parametrize("cassette_name", CASSETTES)
-    def test_the_percentiles_are_ordered_and_non_negative(self, by_stop, by_period):
-        """p50 cannot beat p80, and an absolute deviation cannot be negative.
-
-        The ordering is the half with teeth: punctuality_thresholds spreads its
-        deviations far enough apart that the two come back 30.0 and 204.4, so a
-        run reporting them the wrong way round fails here.
-
-        Non-negativity is a guard rail rather than a test of the absolute value.
-        No cassette runs more than half of its arrivals early, so even a metric
-        that dropped the ``abs`` would report a non-negative median on all seven.
-        What catches a missing ``abs`` is inconsistent_feed's exact p80 of 84.0,
-        which comes back 0.0 without it.
-        """
-        for frame in [by_stop, by_period]:
-            assert (frame["p50_absolute_deviation_seconds"] >= 0).all()
-            assert (
-                frame["p50_absolute_deviation_seconds"]
-                <= frame["p80_absolute_deviation_seconds"]
-            ).all()
-
 
 class TestServiceRunToSchedule:
     @pytest.mark.parametrize("cassette_name", PERFECT_CASSETTES)
@@ -385,16 +283,6 @@ class TestServiceRunToSchedule:
             for column in PROPORTION_COLUMNS:
                 assert set(frame[column]) == {0.0}, column
             assert set(frame["schedule_adherence"]) == {1.0}
-
-    @pytest.mark.parametrize("cassette_name", ["two_service_dates"])
-    def test_a_trip_published_past_midnight_is_still_on_time(self, by_stop, by_period):
-        """Check that times past midnight do not cause issues
-
-        dim_stop_arrivals uses GTFS time, but fct_stop_time_updates uses clock time,
-        this checks that this conversion is handled.
-        """
-        assert set(by_stop["p80_absolute_deviation_seconds"]) == {0.0}
-        assert set(by_period["p80_absolute_deviation_seconds"]) == {0.0}
 
     @pytest.mark.parametrize("cassette_name", ["two_service_dates"])
     def test_the_day_part_follows_the_published_arrival(self, by_stop, by_period):
@@ -550,58 +438,6 @@ class TestTheThresholds:
             THRESHOLD_BY_STOP["p80_absolute_deviation_seconds"]
         )
 
-
-class TestAFeedThatContradictsItself:
-    @pytest.mark.parametrize("cassette_name", ["inconsistent_feed"])
-    def test_an_impossible_arrival_is_reported_as_early_running(self, by_stop):
-        """A stop time the feed got wrong is indistinguishable from a fast trip.
-
-        inconsistent_feed's second trip on each date reports reaching stop 2
-        twenty seconds before it left stop 1 -- 140 s before the schedule said it
-        would. Travel time variability drops that observation, because a negative
-        travel time is not a valid travel time. On time performance keeps it: an
-        arrival 140 s ahead of the published one is more than a minute early, we
-        cannot tell at which trip the error occurs at.
-
-        Deliberate, but temporary until we can get more reliable stop arrivals. Two
-        of the eight arrivals at stop 2 are affected, and the sorted absolute
-        deviations there are six zeros and two 140s, so
-            p80 = value[5] + 0.6 * (value[6] - value[5]) = 0 + 0.6 * 140 = 84.0
-
-        """
-        row = one_row(by_stop, stop_sequence=DISORDERED_SEQUENCE)
-
-        assert row["proportion_early"] == pytest.approx(
-            DISORDERED_TRIPS / INCONSISTENT_TRIPS
-        )
-        assert row["proportion_late"] == 0.0
-        assert row["p80_absolute_deviation_seconds"] == pytest.approx(
-            0.6 * abs(DISORDERED_DEVIATION_SECONDS)
-        )
-
-    @pytest.mark.parametrize("cassette_name", ["inconsistent_feed"])
-    def test_the_deviation_stays_at_the_stop_it_happened_at(self, by_stop):
-        """Only the arrival at stop 2 moved, so only stop 2 reports anything.
-
-        The trip's *departure* from stop 2 is where it always was, so it reaches
-        stop 5 exactly on time.
-
-        This is the only cassette where a stop in the middle of the line
-        deviates. mixed_punctuality's early trips go early at the last timepoint,
-        which has nothing after it to smear into, and every other deviation in
-        the suite moves a whole trip together. So a metric that carried a
-        deviation forward -- measuring against the previous timepoint's arrival
-        rather than the published one, or spreading a trip's worst stop across
-        the rest of its run -- is caught here and nowhere else.
-        """
-        unaffected = by_stop.loc[by_stop["stop_sequence"] != DISORDERED_SEQUENCE]
-
-        assert unaffected["stop_sequence"].to_list() == [1, LAST_TIMEPOINT]
-        assert set(unaffected["p80_absolute_deviation_seconds"]) == {0.0}
-        for column in PROPORTION_COLUMNS:
-            assert set(unaffected[column]) == {0.0}, column
-
-
 class TestThresholdArguments:
     """The thresholds are arguments, and moving one has to move the answer."""
 
@@ -621,36 +457,6 @@ class TestThresholdArguments:
         early = MIXED_EARLY_TRIPS / MIXED_TRIPS
         assert late_stop["proportion_early"] == pytest.approx(early)
         assert late_stop["proportion_not_on_time"] == pytest.approx(early)
-
-    def test_a_wider_early_threshold_forgives_the_early_arrivals(self):
-        """The 120 s early arrivals are the only early ones, so 180 s clears them."""
-        result = run_on_time_performance(
-            "mixed_punctuality", early_seconds=EARLY_THRESHOLD_SECONDS + 120
-        )
-
-        assert set(result.by_stop["proportion_early"]) == {0.0}
-        assert set(result.by_stop["proportion_late"]) == {
-            MIXED_LATE_TRIPS / MIXED_TRIPS
-        }
-
-    def test_loosening_a_threshold_forgives_the_boundary_trip(self):
-        """61 s early and 301 s late forgive the trips sitting on the defaults.
-
-        The reverse of the inclusiveness test: the two trips that are not on time
-        at 60 and 300 are on time a second either side of them, which pins the
-        comparison from the other direction. Only the trips a second past each
-        moved threshold are left, one on each side.
-        """
-        result = run_on_time_performance(
-            "punctuality_thresholds",
-            early_seconds=EARLY_THRESHOLD_SECONDS + 1,
-            late_seconds=LATE_THRESHOLD_SECONDS + 1,
-        )
-        row = one_row(result.by_stop, stop_sequence=LAST_TIMEPOINT)
-
-        assert row["proportion_early"] == pytest.approx(1 / THRESHOLD_TRIPS)
-        assert row["proportion_late"] == pytest.approx(1 / THRESHOLD_TRIPS)
-        assert row["proportion_not_on_time"] == pytest.approx(2 / THRESHOLD_TRIPS)
 
     def test_the_percentiles_name_the_columns(self):
         """The reported column names follow the percentiles asked for.

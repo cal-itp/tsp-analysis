@@ -661,9 +661,9 @@ def punctuality_thresholds() -> Scenario:
 
     On time performance turns a continuous deviation into three buckets, so the
     only interesting question about the boundary is which side of it the boundary
-    itself falls on. "More than a minute early" and "more than five minutes late"
-    are both strict, so a trip exactly 60 s early and one exactly 300 s late are
-    **on time**, and the trips a second beyond them are not.
+    itself falls on. "A minute early or more" and "five minutes late or more"
+    are both inclusive, so a trip exactly 60 s early and one exactly 300 s late
+    are **not on time**, and neither are the trips a second beyond them.
 
     Eight trips: one exactly on each threshold, one a second past each, and four
     dead on time. Every stop time of a trip moves together, so each trip carries
@@ -695,8 +695,8 @@ def punctuality_thresholds() -> Scenario:
         notes=[
             "8 trips every 15 minutes from 04:30, all of them Early AM",
             "deviations at every timepoint: 0, -60, -61, +300, +301, 0, 0, 0",
-            "-60 and +300 sit exactly on the thresholds, so both are on time",
-            "-61 is the only early trip and +301 the only late one",
+            "-60 and +300 sit exactly on the thresholds, so neither is on time",
+            "-60 and -61 are early, +300 and +301 are late",
             "a whole trip moves together, so travel times are untouched",
         ],
     )

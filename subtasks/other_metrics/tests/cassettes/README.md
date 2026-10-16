@@ -275,15 +275,15 @@ split:
 
 | trip | deviation | early? | late? |
 | --- | --- | --- | --- |
-| 1 | −60 s | no — exactly on the threshold | |
+| 1 | −60 s | **yes** — exactly on the threshold | |
 | 2 | −61 s | **yes** | |
-| 3 | +300 s | | no — exactly on the threshold |
+| 3 | +300 s | | **yes** — exactly on the threshold |
 | 4 | +301 s | | **yes** |
 | the other four | 0 s | | |
 
-Both comparisons are strict, so a quarter of the service misses its published
-time and only an eighth of it is reported as early or late. **A `<=` in place of
-a `<` doubles both proportions and nothing else in the suite notices.**
+Both comparisons are inclusive, so half the service misses its published time
+and a quarter of it is reported as early, a quarter as late. **A `<` in place of
+a `<=` halves both proportions and nothing else in the suite notices.**
 
 It is also the only cassette whose percentiles land inside an interpolation
 rather than on a repeated value, which is what makes the two tables visibly
